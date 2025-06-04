@@ -7,5 +7,5 @@ public class Part
     public decimal Price { get; set; }
     
     public int PartTypeId { get; set; }
-    public PartType PartType { get; set; } = null!;
+    public PartType? PartType { get; set; }
 }
