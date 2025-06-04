@@ -19,6 +19,8 @@ Aplikacja webowa do zarządzania częściami samochodowymi w warsztacie, stworzo
 
 ## Uruchomienie projektu
 
+0. Baza w SSMS, nazwa WarsztatSamochodowy
+
 1. Sklonuj repozytorium:
 
 `git clone <adres_repozytorium>`
@@ -33,9 +35,10 @@ Aplikacja webowa do zarządzania częściami samochodowymi w warsztacie, stworzo
 `dotnet ef database update`
 
 4. Uruchom aplikację:
+
 `dotnet run`
 
-5. Otwórz przeglądarkę i przejdź pod adres `https://localhost:5001` lub `http://localhost:5000`.
+6. Otwórz przeglądarkę i przejdź pod adres `https://localhost:5090`
 
 ## Struktura projektu
 
