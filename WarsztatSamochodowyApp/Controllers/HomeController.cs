@@ -1,21 +1,29 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly ApplicationDbContext _context;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ApplicationDbContext context)
     {
-        _logger = logger;
+        _context = context;
     }
 
-    public IActionResult Index()
+    // public IActionResult Index()
+    // {
+    //     return View();
+    // }
+
+    public async Task<IActionResult> Index()
     {
-        return View();
+        var clients = await _context.Clients.ToListAsync();
+        return View(clients);
     }
 
     public IActionResult Privacy()
