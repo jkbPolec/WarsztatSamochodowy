@@ -1,0 +1,129 @@
+# ========== 📦 DOTNET / ASP.NET / C# ==========
+bin/
+obj/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.vsp
+*.pdb
+*.mdb
+*.log
+*.tmp
+*.cache
+*.dbmdl
+*.bak
+*.orig
+*.swp
+*.swn
+*.swo
+*.sdf
+*.VC.db
+
+# ========== 📦 BUILD OUTPUT ==========
+*.dll
+*.exe
+*.exe.config
+*.dll.config
+*.deps.json
+*.runtimeconfig.json
+*.ApplicationInsights.config
+
+# ========== 📦 NUGET ==========
+*.nupkg
+*.snupkg
+*.nuspec
+project.lock.json
+project.fragment.lock.json
+artifacts/
+packages/
+.nuget/
+*.nuget.props
+*.nuget.targets
+
+# ========== 📦 MSBUILD / PROPS / TARGETS ==========
+*.props
+*.targets
+!Directory.Build.props
+!Directory.Build.targets
+
+# ========== 🧪 TEST RESULTS ==========
+TestResult.xml
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+*.codecoverage
+
+# ========== 📸 USER-SPECIFIC ==========
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# JetBrains Rider IDE
+.idea/
+.idea.*
+*.sln.iml
+/.idea/
+.idea.WarsztatSamochodowy.iml
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/dataSources/
+.idea/dataSources.local.xml
+/.idea/httpRequests/
+
+# ========== 🖼️ FRONTEND (opcjonalnie) ==========
+node_modules/
+bower_components/
+wwwroot/lib/
+dist/
+build/
+
+# ========== 🔒 SECRETS / DANE WRAŻLIWE ==========
+*.key
+*.pem
+*.pfx
+*.cert
+secrets.json
+appsettings.*.json
+!appsettings.json
+
+# ========== 🐳 DOCKER / CI ==========
+docker-compose.override.yml
+*.env
+.env.local
+.env.*.local
+
+# ========== 📤 PUBLISH ==========
+publish/
+*.Publish.xml
+*.pubxml
+*.publishproj
+
+# ========== 📎 RIDER CACHE ==========
+.idea/
+.idea/.idea/
+.idea/.idea.WarsztatSamochodowy.iml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/shelf/
+
+# ========== 🔄 GIT ==========
+*.rej
+*.orig
+*~
+
+# ========== 💣 SYSTEMOWE ==========
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========== 📝 MIGRACJE / EF CORE ==========
+Migrations/*Designer.cs
+Migrations/*Snapshot.cs
