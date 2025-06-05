@@ -1,6 +1,10 @@
-﻿namespace WarsztatSamochodowyApp.Models;
+﻿// DTO/PartDto.cs
 
-public class Part
+using WarsztatSamochodowyApp.Models;
+
+namespace WarsztatSamochodowyApp.DTO;
+
+public class PartDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
