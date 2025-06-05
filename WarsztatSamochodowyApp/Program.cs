@@ -46,9 +46,6 @@ public static class Program
         }
 
 
-        app.MapRazorPages();
-
-
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
@@ -61,7 +58,7 @@ public static class Program
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
-
+        app.MapRazorPages();
 
         app.MapStaticAssets();
         app.MapControllerRoute(

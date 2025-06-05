@@ -7,7 +7,7 @@ using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
-[Authorize(Policy = "OnlyAdmins")]
+[Authorize(Policy = "AdminOnly")]
 public class AdminController : Controller
 {
     private readonly RoleManager<IdentityRole> _roleManager;
