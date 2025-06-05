@@ -1,0 +1,25 @@
+﻿@using Microsoft.AspNetCore.Identity
+@model EditUserViewModel
+
+@{
+    Layout = "_Layout";
+}
+
+<h2>Edytuj użytkownika</h2>
+
+<form method="post">
+    <input type="hidden" asp-for="Id"/>
+    <label>Email:</label>
+    <input asp-for="Email"/>
+
+    <h3>Role</h3>
+    @foreach (IdentityRole role in ViewBag.AllRoles)
+    {
+        <input type="checkbox" name="selectedRoles" value="@role.Name"
+               @(Model.Roles.Contains(role.Name) ? "checked" : "")/>
+        @role.Name
+        <br/>
+    }
+
+    <button type="submit">Zapisz</button>
+</form>
