@@ -41,8 +41,6 @@ public static class Program
         }
 
 
-        app.UseAuthentication();
-        app.UseAuthorization();
         app.MapRazorPages();
 
 
@@ -56,6 +54,8 @@ public static class Program
 
         app.UseHttpsRedirection();
         app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
 
         app.MapStaticAssets();
