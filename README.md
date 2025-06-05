@@ -17,9 +17,13 @@ Aplikacja webowa do zarządzania częściami samochodowymi w warsztacie, stworzo
 - Bootstrap (UI)
 - SQL Server (domyślna baza danych)
 
+## Struktura bazy
+![image](https://github.com/user-attachments/assets/b9ec269c-2c1c-4640-8719-dd1c1504e6ed)
+
+
 ## Uruchomienie projektu
 
-0. Baza w SSMS, nazwa WarsztatSamochodowy
+0. Baza SQL SERVER, nazwa WarsztatSamochodowy
 
 1. Sklonuj repozytorium:
 
@@ -38,7 +42,13 @@ Aplikacja webowa do zarządzania częściami samochodowymi w warsztacie, stworzo
 
 `dotnet run`
 
-6. Otwórz przeglądarkę i przejdź pod adres `https://localhost:5090`
+5. Otwórz przeglądarkę i przejdź pod adres `https://localhost:5090`
+  
+6. Konto admina:
+
+login: `admin@gmail.com`
+
+haslo: `Admin1!`
 
 ## Struktura projektu
 
