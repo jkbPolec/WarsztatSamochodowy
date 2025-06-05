@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Services;
+using WarsztatSamochodowyApp.Services.Authorization;
 
 namespace WarsztatSamochodowyApp;
 
@@ -12,15 +13,19 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+
         // Add services to the container.
         builder.Services.AddControllersWithViews();
 
+        //CONTEXT do danych z bazy
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
+        //CONTEXT do tożsamości
         builder.Services.AddDbContext<IdentityContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        // Dodanie ról i polityk autoryzacji
+        builder.Services.AddAuthorization(options => { options.AddCustomAuthorizationPolicies(); });
 
 
         builder.Services.AddRazorPages();

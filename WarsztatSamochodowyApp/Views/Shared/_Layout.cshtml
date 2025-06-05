@@ -36,10 +36,7 @@
                     </li>
                 </ul>
 
-                @if (User.IsInRole("Admin"))
-                {
-                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Panel admina</a>
-                }
+                @await Component.InvokeAsync("AdminPanelButton")
 
 
                 <partial name="_LoginPartial"/>

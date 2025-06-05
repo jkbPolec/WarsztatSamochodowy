@@ -1,0 +1,11 @@
+﻿using Microsoft.AspNetCore.Authorization;
+
+namespace WarsztatSamochodowyApp.Services.Authorization;
+
+public static class AuthorizationPolicies
+{
+    public static void AddCustomAuthorizationPolicies(this AuthorizationOptions options)
+    {
+        options.AddPolicy("OnlyAdmins", policy => { policy.RequireRole("Admin"); });
+    }
+}
