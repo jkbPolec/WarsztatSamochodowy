@@ -1,5 +1,7 @@
-using WarsztatSamochodowyApp.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WarsztatSamochodowyApp.Data;
+
 namespace WarsztatSamochodowyApp;
 
 public class Program
@@ -10,11 +12,23 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+        builder.Services.AddDbContext<IdentityContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        builder.Services.AddDefaultIdentity<AppUser>(options => { options.SignIn.RequireConfirmedAccount = false; })
+            .AddRoles<IdentityRole>().AddEntityFrameworkStores<IdentityContext>();
+
+        builder.Services.AddRazorPages();
+
         var app = builder.Build();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapRazorPages();
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
@@ -31,8 +45,8 @@ public class Program
 
         app.MapStaticAssets();
         app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                "default",
+                "{controller=Home}/{action=Index}/{id?}")
             .WithStaticAssets();
 
         app.Run();
