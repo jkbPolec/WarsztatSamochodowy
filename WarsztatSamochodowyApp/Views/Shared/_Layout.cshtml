@@ -27,19 +27,16 @@
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                     </li>
+
+                    @await Component.InvokeAsync("Header", new { policyName = "CarPartsPolicy", viewName = "PartsButtons" })
+
                     <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Parts" asp-action="Index">Części</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="PartType" asp-action="Index">Typy
-                            części</a>
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Client" asp-action="Index">Klienci</a>
                     </li>
                 </ul>
 
-                @if (User.IsInRole("Admin"))
-                {
-                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Panel admina</a>
-                }
+
+                @await Component.InvokeAsync("Header", new { policyName = "AdminOnly", viewName = "AdminPanelButton" })
 
 
                 <partial name="_LoginPartial"/>

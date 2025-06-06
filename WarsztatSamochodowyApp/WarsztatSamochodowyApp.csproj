@@ -20,12 +20,18 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5"/>
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0"/>
+        <PackageReference Include="Riok.Mapperly" Version="4.2.1"/>
+        <PackageReference Include="Scrutor" Version="6.1.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Mappers\"/>
         <Folder Include="Views\Parts\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Shared\Components\AdminPanelButton\Default.cshtml" />
     </ItemGroup>
 
 </Project>
