@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using WarsztatSamochodowyApp.Mappers;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
+[Authorize(Policy = "CarPartsPolicy")]
 public class PartsController : Controller
 {
     private readonly ApplicationDbContext _context;
