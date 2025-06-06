@@ -18,7 +18,7 @@ Aplikacja webowa do zarządzania częściami samochodowymi w warsztacie, stworzo
 - SQL Server (domyślna baza danych)
 
 ## Struktura bazy
-![image](https://github.com/user-attachments/assets/b9ec269c-2c1c-4640-8719-dd1c1504e6ed)
+![image](https://github.com/user-attachments/assets/004cf491-a79e-4a26-8261-d1c63afca862)
 
 
 ## Uruchomienie projektu
