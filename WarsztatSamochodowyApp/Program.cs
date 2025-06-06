@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
+using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Services;
 using WarsztatSamochodowyApp.Services.Authorization;
 
@@ -23,6 +24,14 @@ public static class Program
         //CONTEXT do tożsamości
         builder.Services.AddDbContext<IdentityContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+        
+        //Dodawanie mapperow zeby dzialalo DI (jako singletony, prowadzacy bedzie wniebowziety)
+        builder.Services.Scan(scan => scan
+            .FromAssemblyOf<PartMapper>() // ← dowolny mapper jako punkt startowy
+            .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Mapper")))
+            .AsSelf()
+            .WithSingletonLifetime());
 
         // Dodanie ról i polityk autoryzacji
         builder.Services.AddAuthorization(options => { options.AddCustomAuthorizationPolicies(); });

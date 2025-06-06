@@ -9,4 +9,5 @@ public partial class PartMapper
 {
     public partial PartDto ToDto(Part part);
     public partial Part ToEntity(PartDto dto);
+    public partial void UpdateEntity(PartDto dto, Part entity);
 }

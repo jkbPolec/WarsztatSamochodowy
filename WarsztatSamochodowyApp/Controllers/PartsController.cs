@@ -2,26 +2,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
+using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Mappers;
-using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
 public class PartsController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly PartMapper _mapper;
 
-    public PartsController(ApplicationDbContext context)
+    public PartsController(ApplicationDbContext context, PartMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET: Parts
     public async Task<IActionResult> Index()
     {
         var parts = await _context.Parts.Include(p => p.PartType).ToListAsync();
-        var mapper = new PartMapper();
-        var partDtos = parts.Select(p => mapper.ToDto(p)).ToList();
+        var partDtos = parts.Select(p => _mapper.ToDto(p)).ToList();
         return View(partDtos);
     }
 
@@ -42,7 +43,7 @@ public class PartsController : Controller
     public IActionResult Create()
     {
         ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Name");
-        return View();
+        return View(new PartDto());
     }
 
     // POST: Parts/Create
@@ -50,18 +51,19 @@ public class PartsController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Name,Price,PartTypeId")] Part part)
+    public async Task<IActionResult> Create(PartDto dto)
     {
         if (ModelState.IsValid)
         {
-            _context.Add(part);
+            var part = _mapper.ToEntity(dto); // mapper zainicjalizowany w konstruktorze
+            _context.Parts.Add(part);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         foreach (var error in ModelState.Values.SelectMany(v => v.Errors)) Console.WriteLine(error.ErrorMessage);
-        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Name", part.PartTypeId);
-        return View(part);
+        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Name", dto.PartTypeId);
+        return View(dto);
     }
 
     // GET: Parts/Edit/5
@@ -71,8 +73,9 @@ public class PartsController : Controller
 
         var part = await _context.Parts.FindAsync(id);
         if (part == null) return NotFound();
-        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Id", part.PartTypeId);
-        return View(part);
+        var dto = _mapper.ToDto(part);
+        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Name", dto.PartTypeId);
+        return View(dto);
     }
 
     // POST: Parts/Edit/5
@@ -80,29 +83,25 @@ public class PartsController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,PartTypeId")] Part part)
+    public async Task<IActionResult> Edit(int id, PartDto dto)
     {
-        if (id != part.Id) return NotFound();
+        if (id != dto.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(part);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PartExists(part.Id)) return NotFound();
+            var part = await _context.Parts.FindAsync(id);
+            if (part == null) return NotFound();
 
-                throw;
-            }
+            _mapper.UpdateEntity(dto, part);
+
+            _context.Update(part);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Id", part.PartTypeId);
-        return View(part);
+        ViewData["PartTypeId"] = new SelectList(_context.PartTypes, "Id", "Name", dto.PartTypeId);
+        return View(dto);
     }
 
     // GET: Parts/Delete/5
