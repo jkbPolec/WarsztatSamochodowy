@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
@@ -9,7 +8,6 @@ namespace WarsztatSamochodowyApp.Controllers;
 
 public class ServiceOrderController : Controller
 {
-
     private readonly ApplicationDbContext _context;
 
     public ServiceOrderController(ApplicationDbContext context)
@@ -23,17 +21,39 @@ public class ServiceOrderController : Controller
         var serviceOrders = await _context.ServiceOrders.Include(v => v.Vehicle).ToListAsync();
         return View(serviceOrders);
     }
-    // GET: ServiceOrder/details/5
+
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
         var serviceOrder = await _context.ServiceOrders
-            .Include(v => v.Vehicle)
+            .Include(o => o.Vehicle)
+            .Include(o => o.ServiceTasks)
+            .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
             .FirstOrDefaultAsync(m => m.Id == id);
+
         if (serviceOrder == null) return NotFound();
 
         return View(serviceOrder);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddComment(int id, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Details", new { id });
+
+        var comment = new Comment
+        {
+            ServiceOrderId = id,
+            Content = content,
+            Author = User.Identity?.Name ?? "Anonim"
+        };
+
+        _context.ServiceOrderComments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Details", new { id });
     }
 
     // GET: ServiceOrder/Create
@@ -41,6 +61,14 @@ public class ServiceOrderController : Controller
     {
         var vehicles = await _context.Vehicles.ToListAsync();
         ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
+
+        var tasks = await _context.ServiceTasks.ToListAsync();
+        ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
+        {
+            Value = t.Id.ToString(),
+            Text = $"{t.Name} - {t.Price:C}"
+        }).ToList();
+
         return View();
     }
 
@@ -48,31 +76,33 @@ public class ServiceOrderController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ServiceOrder serviceOrder)
+    public async Task<IActionResult> Create(ServiceOrder serviceOrder, List<int> SelectedTaskIds)
     {
-        // DLA DEBUGOWANIA – zobacz czy VehicleId ma wartość
-        Console.WriteLine($"VehicleId z formularza: {serviceOrder.VehicleId}");
-
         if (!ModelState.IsValid)
         {
-            // Loguj błędy (dla pewności)
-            foreach (var key in ModelState.Keys)
-            {
-                var state = ModelState[key];
-                foreach (var error in state.Errors)
-                {
-                    Console.WriteLine($"Model error in '{key}': {error.ErrorMessage}");
-                }
-            }
-
-            // Ponowne załadowanie listy pojazdów
             var vehicles = await _context.Vehicles.ToListAsync();
             ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+
+            var tasks = await _context.ServiceTasks.ToListAsync();
+            ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = $"{t.Name} - {t.Price:C}"
+            }).ToList();
+
             return View(serviceOrder);
         }
 
+        // Pobierz zadania z bazy i przypisz do zamówienia
+        var selectedTasks = await _context.ServiceTasks
+            .Where(t => SelectedTaskIds.Contains(t.Id))
+            .ToListAsync();
+
+        serviceOrder.ServiceTasks = selectedTasks;
+
         _context.Add(serviceOrder);
         await _context.SaveChangesAsync();
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -81,55 +111,79 @@ public class ServiceOrderController : Controller
     {
         if (id == null) return NotFound();
 
-        var serviceOrder = await _context.ServiceOrders.FindAsync(id);
+        var serviceOrder = await _context.ServiceOrders
+            .Include(o => o.ServiceTasks)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
         if (serviceOrder == null) return NotFound();
 
-        ViewData["VehicleId"] = new SelectList(_context.Vehicles, "Id", "RegistrationNumber");
+        ViewData["VehicleId"] = new SelectList(_context.Vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+
+        var allTasks = await _context.ServiceTasks.ToListAsync();
+        ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+        {
+            Value = t.Id.ToString(),
+            Text = $"{t.Name} - {t.Price:C}",
+            Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
+        }).ToList();
+
         return View(serviceOrder);
     }
 
     // POST: ServiceOrder/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder)
+    public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder, List<int> SelectedTaskIds)
     {
-        if (id != serviceOrder.Id)
-        {
-            return NotFound();
-        }
+        if (id != serviceOrder.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
             try
             {
-                _context.Update(serviceOrder);
+                var existingOrder = await _context.ServiceOrders
+                    .Include(o => o.ServiceTasks)
+                    .FirstOrDefaultAsync(o => o.Id == id);
+
+                if (existingOrder == null) return NotFound();
+
+                // Zaktualizuj podstawowe pola
+                existingOrder.OrderDate = serviceOrder.OrderDate;
+                existingOrder.Status = serviceOrder.Status;
+                existingOrder.VehicleId = serviceOrder.VehicleId;
+
+                // Aktualizuj relacje wiele-do-wielu
+                existingOrder.ServiceTasks.Clear();
+
+                var selectedTasks = await _context.ServiceTasks
+                    .Where(t => SelectedTaskIds.Contains(t.Id))
+                    .ToListAsync();
+
+                foreach (var task in selectedTasks) existingOrder.ServiceTasks.Add(task);
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ServiceOrderExists(serviceOrder.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                if (!ServiceOrderExists(serviceOrder.Id)) return NotFound();
+
+                throw;
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-        // Jeśli masz w widoku dropdown na Vehicle, trzeba przygotować SelectList
-        var vehicles = await _context.Vehicles
-            .Select(v => new SelectListItem
-            {
-                Value = v.Id.ToString(),
-                Text = $"{v.Vin} ({v.RegistrationNumber})"
-            })
-            .ToListAsync();
+        // Reload dropdowns if model is invalid
+        var vehicles = await _context.Vehicles.ToListAsync();
+        ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
 
-        ViewData["VehicleId"] = new SelectList(vehicles, "Value", "Text", serviceOrder.VehicleId);
+        var allTasks = await _context.ServiceTasks.ToListAsync();
+        ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+        {
+            Value = t.Id.ToString(),
+            Text = $"{t.Name} - {t.Price:C}",
+            Selected = SelectedTaskIds.Contains(t.Id)
+        }).ToList();
 
         return View(serviceOrder);
     }
