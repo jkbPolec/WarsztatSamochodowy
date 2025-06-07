@@ -10,8 +10,14 @@ public class ServiceOrder
 
 
     public int VehicleId { get; set; }
-    [ValidateNever]
-    public Vehicle Vehicle { get; set; } = null!;
+
+    [ValidateNever] public Vehicle Vehicle { get; set; } = null!;
+
+    // Tworzy relacje wiele do wielu z ServiceTask
+    public ICollection<ServiceTask> ServiceTasks { get; set; } = new List<ServiceTask>();
+
+    public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
 
     //public int WorkerId { get; set; }
     //public Worker Worker { get; set; } = null!;
