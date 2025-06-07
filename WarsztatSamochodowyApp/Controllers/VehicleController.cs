@@ -96,7 +96,7 @@ public class VehicleController : Controller
         return View(vehicle);
     }
 
-// POST: Vehicle/Edit/5
+    // POST: Vehicle/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, Vehicle vehicle)
@@ -124,7 +124,7 @@ public class VehicleController : Controller
         return View(vehicle);
     }
 
-// GET: Vehicle/Delete/5
+    // GET: Vehicle/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
@@ -137,7 +137,7 @@ public class VehicleController : Controller
         return View(vehicle);
     }
 
-// POST: Vehicle/Delete/5
+    // POST: Vehicle/Delete/5
     [HttpPost]
     [ActionName("Delete")]
     [ValidateAntiForgeryToken]

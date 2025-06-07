@@ -1,6 +1,6 @@
 ﻿namespace WarsztatSamochodowyApp.Models;
 
-public enum ServiceOrderStatus 
+public enum ServiceOrderStatus
 {
     Nowe,
     WTrakcie,

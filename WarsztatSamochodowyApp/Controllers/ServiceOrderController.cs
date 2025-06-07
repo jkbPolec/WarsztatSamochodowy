@@ -7,11 +7,13 @@ using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
-public class ServiceOrderController : Controller {
+public class ServiceOrderController : Controller
+{
 
     private readonly ApplicationDbContext _context;
 
-    public ServiceOrderController(ApplicationDbContext context) {
+    public ServiceOrderController(ApplicationDbContext context)
+    {
         _context = context;
     }
 
@@ -22,7 +24,8 @@ public class ServiceOrderController : Controller {
         return View(serviceOrders);
     }
     // GET: ServiceOrder/details/5
-    public async Task<IActionResult> Details(int? id) {
+    public async Task<IActionResult> Details(int? id)
+    {
         if (id == null) return NotFound();
 
         var serviceOrder = await _context.ServiceOrders
@@ -34,7 +37,8 @@ public class ServiceOrderController : Controller {
     }
 
     // GET: ServiceOrder/Create
-    public async Task<IActionResult> Create() {
+    public async Task<IActionResult> Create()
+    {
         var vehicles = await _context.Vehicles.ToListAsync();
         ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
         return View();
@@ -73,7 +77,8 @@ public class ServiceOrderController : Controller {
     }
 
     // GET: ServiceOrder/Edit/5
-    public async Task<IActionResult> Edit(int? id) {
+    public async Task<IActionResult> Edit(int? id)
+    {
         if (id == null) return NotFound();
 
         var serviceOrder = await _context.ServiceOrders.FindAsync(id);
@@ -86,21 +91,28 @@ public class ServiceOrderController : Controller {
     // POST: ServiceOrder/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder) {
-        if (id != serviceOrder.Id) {
+    public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder)
+    {
+        if (id != serviceOrder.Id)
+        {
             return NotFound();
         }
 
-        if (ModelState.IsValid) {
-            try {
+        if (ModelState.IsValid)
+        {
+            try
+            {
                 _context.Update(serviceOrder);
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException) {
-                if (!ServiceOrderExists(serviceOrder.Id)) {
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ServiceOrderExists(serviceOrder.Id))
+                {
                     return NotFound();
                 }
-                else {
+                else
+                {
                     throw;
                 }
             }
@@ -110,7 +122,8 @@ public class ServiceOrderController : Controller {
 
         // Jeśli masz w widoku dropdown na Vehicle, trzeba przygotować SelectList
         var vehicles = await _context.Vehicles
-            .Select(v => new SelectListItem {
+            .Select(v => new SelectListItem
+            {
                 Value = v.Id.ToString(),
                 Text = $"{v.Vin} ({v.RegistrationNumber})"
             })
@@ -121,7 +134,8 @@ public class ServiceOrderController : Controller {
         return View(serviceOrder);
     }
 
-    private bool ServiceOrderExists(int id) {
+    private bool ServiceOrderExists(int id)
+    {
         return _context.ServiceOrders.Any(e => e.Id == id);
     }
 
@@ -137,7 +151,7 @@ public class ServiceOrderController : Controller {
 
         return View(vehicle);
     }
-    
+
     // POST: ServiceOrder/Delete/5
     [HttpPost]
     [ActionName("Delete")]
@@ -145,13 +159,14 @@ public class ServiceOrderController : Controller {
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
         if (id == null) return NotFound();
-        
+
         var serviceOrder = await _context.ServiceOrders.FindAsync(id);
-        if (serviceOrder != null) {
+        if (serviceOrder != null)
+        {
             _context.ServiceOrders.Remove(serviceOrder);
             await _context.SaveChangesAsync();
         }
-        
+
         return RedirectToAction(nameof(Index));
     }
 }

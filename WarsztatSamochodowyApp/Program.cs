@@ -25,7 +25,7 @@ public static class Program
         builder.Services.AddDbContext<IdentityContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        
+
         //Dodawanie mapperow zeby dzialalo DI (jako singletony, prowadzacy bedzie wniebowziety)
         builder.Services.Scan(scan => scan
             .FromAssemblyOf<PartMapper>() // ← dowolny mapper jako punkt startowy
