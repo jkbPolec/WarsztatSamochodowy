@@ -28,10 +28,11 @@
 
     <ItemGroup>
         <Folder Include="Views\Parts\"/>
+        <Folder Include="wwwroot\images\"/>
     </ItemGroup>
 
     <ItemGroup>
-      <_ContentIncludedByDefault Remove="Views\Shared\Components\AdminPanelButton\Default.cshtml" />
+        <_ContentIncludedByDefault Remove="Views\Shared\Components\AdminPanelButton\Default.cshtml"/>
     </ItemGroup>
 
 </Project>

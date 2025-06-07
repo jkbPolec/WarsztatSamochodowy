@@ -30,6 +30,7 @@
 
                     @await Component.InvokeAsync("Header", new { policyName = "CarPartsPolicy", viewName = "PartsButtons" })
 
+                    @await Component.InvokeAsync("Header", new { policyName = "CarRegistrationPolicy", viewName = "VehiclesButton" })
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Client" asp-action="Index">Klienci</a>
                     </li>
