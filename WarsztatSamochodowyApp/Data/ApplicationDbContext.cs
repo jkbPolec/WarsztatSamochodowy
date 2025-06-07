@@ -1,12 +1,13 @@
-﻿using System.Reflection;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Data;
 
 public class ApplicationDbContext : DbContext
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+    {
+    }
 
     public DbSet<Worker> Workers { get; set; }
     public DbSet<PartType> PartTypes { get; set; }
@@ -17,5 +18,4 @@ public class ApplicationDbContext : DbContext
     public DbSet<UsedPart> UsedParts { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<Comment> Comments { get; set; }
-    
 }
