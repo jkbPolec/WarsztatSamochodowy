@@ -17,7 +17,7 @@
 
     <dt class="col-sm-2">Pojazd</dt>
     <dd class="col-sm-10">@Model.Vehicle?.RegistrationNumber</dd>
-    
+
     <dt class="col-sm-2">Zadania serwisowe</dt>
     <dd class="col-sm-10">
         @if (Model.ServiceTasks.Any())
@@ -38,3 +38,33 @@
 
 <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edytuj</a>
 <a asp-action="Index" class="btn btn-secondary">Powrót</a>
+
+
+<h4>Komentarze</h4>
+<hr/>
+<form asp-action="AddComment" method="post" class="mb-4">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.Id"/>
+    <div class="form-group">
+        <label for="content">Dodaj komentarz:</label>
+        <textarea class="form-control" name="content" id="content" rows="3" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Dodaj</button>
+</form>
+@if (Model.Comments.Any())
+{
+    <div class="mb-4">
+        @foreach (var comment in Model.Comments)
+        {
+            <div class="border rounded p-2 mb-2 bg-light">
+                <strong>@comment.Author</strong>
+                <span class="text-muted" style="font-size: 0.85em;">@comment.CreatedAt.ToString("g")</span>
+                <div>@comment.Content</div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>Brak komentarzy.</p>
+}

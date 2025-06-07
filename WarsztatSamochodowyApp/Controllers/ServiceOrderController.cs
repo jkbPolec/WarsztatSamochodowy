@@ -22,18 +22,38 @@ public class ServiceOrderController : Controller
         return View(serviceOrders);
     }
 
-    // GET: ServiceOrder/details/5
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
         var serviceOrder = await _context.ServiceOrders
-            .Include(v => v.Vehicle)
+            .Include(o => o.Vehicle)
             .Include(o => o.ServiceTasks)
+            .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
             .FirstOrDefaultAsync(m => m.Id == id);
+
         if (serviceOrder == null) return NotFound();
 
         return View(serviceOrder);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddComment(int id, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Details", new { id });
+
+        var comment = new Comment
+        {
+            ServiceOrderId = id,
+            Content = content,
+            Author = User.Identity?.Name ?? "Anonim"
+        };
+
+        _context.ServiceOrderComments.Add(comment);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Details", new { id });
     }
 
     // GET: ServiceOrder/Create
