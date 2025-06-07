@@ -9,5 +9,6 @@ public static class AuthorizationPolicies
         options.AddPolicy("AdminOnly", policy => { policy.RequireRole("Admin"); });
         options.AddPolicy("CarPartsPolicy", policy => { policy.RequireRole("Admin", "Mechanik"); });
         options.AddPolicy("CarRegistrationPolicy", policy => { policy.RequireRole("Admin", "Recepcjonista"); });
+        options.AddPolicy("ServiceOrderPolicy", policy => { policy.RequireRole("Admin", "Recepcjonista"); });
     }
 }

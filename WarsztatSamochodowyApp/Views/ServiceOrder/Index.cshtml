@@ -1,0 +1,38 @@
+﻿@model IEnumerable<WarsztatSamochodowyApp.Models.ServiceOrder>
+
+@{
+    ViewData["Title"] = "Lista zleceń serwisowych";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Lista zleceń serwisowych</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Dodaj nowe zlecenie</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Data</th>
+        <th>Status</th>
+        <th>Pojazd</th>
+        <th>Akcje</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.OrderDate.ToShortDateString()</td>
+            <td>@item.Status</td>
+            <td>@item.Vehicle?.RegistrationNumber</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Szczegóły</a>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edytuj</a>
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Usuń</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -211,7 +211,6 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                         .HasColumnType("int");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RegistrationNumber")

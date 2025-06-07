@@ -1,0 +1,29 @@
+﻿@model WarsztatSamochodowyApp.Models.ServiceOrder
+
+@{
+    ViewData["Title"] = "Usuń zlecenie";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Usuń zlecenie</h1>
+
+<h4>Czy na pewno chcesz usunąć to zlecenie?</h4>
+<hr />
+
+<dl class="row">
+    <dt class="col-sm-2">Data</dt>
+    <dd class="col-sm-10">@Model.OrderDate.ToShortDateString()</dd>
+
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@Model.Status</dd>
+
+    <dt class="col-sm-2">Pojazd</dt>
+    <dd class="col-sm-10">@Model.Vehicle?.RegistrationNumber</dd>
+</dl>
+
+<form asp-action="DeleteConfirmed">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="submit" value="Usuń" class="btn btn-danger" />
+    <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+</form>

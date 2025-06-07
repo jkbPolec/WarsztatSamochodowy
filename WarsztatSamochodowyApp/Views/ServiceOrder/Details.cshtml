@@ -1,0 +1,23 @@
+﻿@model WarsztatSamochodowyApp.Models.ServiceOrder
+
+@{
+    ViewData["Title"] = "Szczegóły zlecenia";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Szczegóły zlecenia</h1>
+<hr />
+
+<dl class="row">
+    <dt class="col-sm-2">Data</dt>
+    <dd class="col-sm-10">@Model.OrderDate.ToShortDateString()</dd>
+
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@Model.Status</dd>
+
+    <dt class="col-sm-2">Pojazd</dt>
+    <dd class="col-sm-10">@Model.Vehicle?.RegistrationNumber</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edytuj</a>
+<a asp-action="Index" class="btn btn-secondary">Powrót</a>
