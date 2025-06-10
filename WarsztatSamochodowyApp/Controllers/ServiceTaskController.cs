@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Models;
@@ -22,114 +19,127 @@ namespace WarsztatSamochodowyApp.Controllers
         // GET: ServiceTask
         public async Task<IActionResult> Index()
         {
-            return View(await _context.ServiceTasks.ToListAsync());
+            var tasks = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                    .ThenInclude(up => up.Part)
+                .ToListAsync();
+
+            return View(tasks);
         }
 
         // GET: ServiceTask/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var serviceTask = await _context.ServiceTasks
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
+                .Include(t => t.UsedParts)
+                    .ThenInclude(up => up.Part)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (serviceTask == null) return NotFound();
 
             return View(serviceTask);
         }
 
         // GET: ServiceTask/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            var allParts = await _context.Parts.ToListAsync();
+            ViewBag.AllParts = allParts;
             return View();
         }
 
         // POST: ServiceTask/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price")] ServiceTask serviceTask)
+        public async Task<IActionResult> Create(ServiceTask serviceTask, List<int> partIds, List<int> quantities)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(serviceTask);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ViewBag.AllParts = await _context.Parts.ToListAsync();
+                return View(serviceTask);
             }
-            return View(serviceTask);
+
+            if (partIds != null && quantities != null && partIds.Count == quantities.Count)
+            {
+                serviceTask.UsedParts = partIds.Select((partId, i) => new UsedPart
+                {
+                    PartId = partId,
+                    Quantity = quantities[i]
+                }).Where(up => up.Quantity > 0).ToList();
+            }
+
+            _context.ServiceTasks.Add(serviceTask);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: ServiceTask/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var serviceTask = await _context.ServiceTasks.FindAsync(id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
+            var serviceTask = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (serviceTask == null) return NotFound();
+
+            ViewBag.AllParts = await _context.Parts.ToListAsync();
             return View(serviceTask);
         }
 
         // POST: ServiceTask/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price")] ServiceTask serviceTask)
+        public async Task<IActionResult> Edit(int id, ServiceTask serviceTask, List<int> partIds, List<int> quantities)
         {
-            if (id != serviceTask.Id)
+            if (id != serviceTask.Id) return NotFound();
+
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                ViewBag.AllParts = await _context.Parts.ToListAsync();
+                return View(serviceTask);
             }
 
-            if (ModelState.IsValid)
+            var existingTask = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (existingTask == null) return NotFound();
+
+            existingTask.Name = serviceTask.Name;
+            existingTask.Description = serviceTask.Description;
+            existingTask.Price = serviceTask.Price;
+
+            // Usuń stare części
+            _context.UsedParts.RemoveRange(existingTask.UsedParts);
+
+            if (partIds != null && quantities != null && partIds.Count == quantities.Count)
             {
-                try
+                existingTask.UsedParts = partIds.Select((partId, i) => new UsedPart
                 {
-                    _context.Update(serviceTask);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ServiceTaskExists(serviceTask.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                    PartId = partId,
+                    Quantity = quantities[i]
+                }).Where(up => up.Quantity > 0).ToList();
             }
-            return View(serviceTask);
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: ServiceTask/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var serviceTask = await _context.ServiceTasks
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
+
+            if (serviceTask == null) return NotFound();
 
             return View(serviceTask);
         }
@@ -143,9 +153,9 @@ namespace WarsztatSamochodowyApp.Controllers
             if (serviceTask != null)
             {
                 _context.ServiceTasks.Remove(serviceTask);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

@@ -29,6 +29,8 @@ public class ServiceOrderController : Controller
         var serviceOrder = await _context.ServiceOrders
             .Include(o => o.Vehicle)
             .Include(o => o.ServiceTasks)
+                .ThenInclude(st => st.UsedParts)
+                    .ThenInclude(up => up.Part)
             .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
             .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -62,18 +64,21 @@ public class ServiceOrderController : Controller
         var vehicles = await _context.Vehicles.ToListAsync();
         ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
 
-        var tasks = await _context.ServiceTasks.ToListAsync();
+        var tasks = await _context.ServiceTasks
+            .Include(t => t.UsedParts)
+            .ThenInclude(up => up.Part)
+            .ToListAsync();
+
         ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
         {
             Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.Price:C}"
+            Text = $"{t.Name} - {t.TotalCost:C}"
         }).ToList();
 
         return View();
     }
 
     // POST: ServiceOrder/Create
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceOrder serviceOrder, List<int> SelectedTaskIds)
@@ -83,17 +88,20 @@ public class ServiceOrderController : Controller
             var vehicles = await _context.Vehicles.ToListAsync();
             ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
 
-            var tasks = await _context.ServiceTasks.ToListAsync();
+            var tasks = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .ThenInclude(up => up.Part)
+                .ToListAsync();
+
             ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
             {
                 Value = t.Id.ToString(),
-                Text = $"{t.Name} - {t.Price:C}"
+                Text = $"{t.Name} - {t.TotalCost:C}"
             }).ToList();
 
             return View(serviceOrder);
         }
 
-        // Pobierz zadania z bazy i przypisz do zamówienia
         var selectedTasks = await _context.ServiceTasks
             .Where(t => SelectedTaskIds.Contains(t.Id))
             .ToListAsync();
@@ -119,11 +127,15 @@ public class ServiceOrderController : Controller
 
         ViewData["VehicleId"] = new SelectList(_context.Vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
 
-        var allTasks = await _context.ServiceTasks.ToListAsync();
+        var allTasks = await _context.ServiceTasks
+            .Include(t => t.UsedParts)
+            .ThenInclude(up => up.Part)
+            .ToListAsync();
+
         ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
         {
             Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.Price:C}",
+            Text = $"{t.Name} - {t.TotalCost:C}",
             Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
         }).ToList();
 
@@ -147,19 +159,20 @@ public class ServiceOrderController : Controller
 
                 if (existingOrder == null) return NotFound();
 
-                // Zaktualizuj podstawowe pola
                 existingOrder.OrderDate = serviceOrder.OrderDate;
                 existingOrder.Status = serviceOrder.Status;
                 existingOrder.VehicleId = serviceOrder.VehicleId;
 
-                // Aktualizuj relacje wiele-do-wielu
                 existingOrder.ServiceTasks.Clear();
 
                 var selectedTasks = await _context.ServiceTasks
                     .Where(t => SelectedTaskIds.Contains(t.Id))
                     .ToListAsync();
 
-                foreach (var task in selectedTasks) existingOrder.ServiceTasks.Add(task);
+                foreach (var task in selectedTasks)
+                {
+                    existingOrder.ServiceTasks.Add(task);
+                }
 
                 await _context.SaveChangesAsync();
             }
@@ -173,15 +186,18 @@ public class ServiceOrderController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // Reload dropdowns if model is invalid
         var vehicles = await _context.Vehicles.ToListAsync();
         ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
 
-        var allTasks = await _context.ServiceTasks.ToListAsync();
+        var allTasks = await _context.ServiceTasks
+            .Include(t => t.UsedParts)
+            .ThenInclude(up => up.Part)
+            .ToListAsync();
+
         ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
         {
             Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.Price:C}",
+            Text = $"{t.Name} - {t.TotalCost:C}",
             Selected = SelectedTaskIds.Contains(t.Id)
         }).ToList();
 
@@ -198,12 +214,12 @@ public class ServiceOrderController : Controller
     {
         if (id == null) return NotFound();
 
-        var vehicle = await _context.ServiceOrders
+        var serviceOrder = await _context.ServiceOrders
             .Include(v => v.Vehicle)
             .FirstOrDefaultAsync(m => m.Id == id);
-        if (vehicle == null) return NotFound();
+        if (serviceOrder == null) return NotFound();
 
-        return View(vehicle);
+        return View(serviceOrder);
     }
 
     // POST: ServiceOrder/Delete/5
@@ -212,8 +228,6 @@ public class ServiceOrderController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        if (id == null) return NotFound();
-
         var serviceOrder = await _context.ServiceOrders.FindAsync(id);
         if (serviceOrder != null)
         {

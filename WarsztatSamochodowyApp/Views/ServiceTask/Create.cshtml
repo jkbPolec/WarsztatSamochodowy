@@ -1,41 +1,60 @@
 @model WarsztatSamochodowyApp.Models.ServiceTask
 
 @{
-    ViewData["Title"] = "Create";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Create Service Task";
+    var allParts = ViewBag.AllParts as List<WarsztatSamochodowyApp.Models.Part>;
 }
 
-<h1>Create</h1>
+<h2>Create Service Task</h2>
 
-<h4>ServiceTask</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Price" class="control-label"></label>
-                <input asp-for="Price" class="form-control" />
-                <span asp-validation-for="Price" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
-</div>
+    <div class="form-group">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Price"></label>
+        <input asp-for="Price" type="number" step="0.01" class="form-control" />
+        <span asp-validation-for="Price" class="text-danger"></span>
+    </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <h4>Used Parts</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Part Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (allParts != null)
+            {
+                for (int i = 0; i < allParts.Count; i++)
+                {
+                    <tr>
+                        <td>@allParts[i].Name</td>
+                        <td>@allParts[i].Price zł</td>
+                        <td>
+                            <input type="hidden" name="partIds" value="@allParts[i].Id" />
+                            <input type="number" name="quantities" min="0" value="0" class="form-control" />
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
 
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
