@@ -7,6 +7,7 @@ public class ServiceOrder
     public int Id { get; set; }
     public DateTime OrderDate { get; set; }
     public ServiceOrderStatus Status { get; set; }
+    public DateTime? FinishedDate { get; set; }
 
 
     public int VehicleId { get; set; }

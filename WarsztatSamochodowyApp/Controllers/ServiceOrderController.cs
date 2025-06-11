@@ -102,6 +102,9 @@ public class ServiceOrderController : Controller
             return View(serviceOrder);
         }
 
+        serviceOrder.OrderDate = DateTime.Now;
+        serviceOrder.Status = ServiceOrderStatus.Nowe;  // <-- ustawiamy automatycznie status na "Nowe"
+
         var selectedTasks = await _context.ServiceTasks
             .Where(t => SelectedTaskIds.Contains(t.Id))
             .ToListAsync();
@@ -161,6 +164,14 @@ public class ServiceOrderController : Controller
 
                 existingOrder.OrderDate = serviceOrder.OrderDate;
                 existingOrder.Status = serviceOrder.Status;
+                if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
+                {
+                    existingOrder.FinishedDate = DateTime.Now;
+                }
+                else if (serviceOrder.Status != ServiceOrderStatus.Zakonczone)
+                {
+                    existingOrder.FinishedDate = null;
+                }
                 existingOrder.VehicleId = serviceOrder.VehicleId;
 
                 existingOrder.ServiceTasks.Clear();
@@ -224,7 +235,7 @@ public class ServiceOrderController : Controller
 
     // POST: ServiceOrder/Delete/5
     [HttpPost]
-    [ActionName("Delete")]
+    [ActionName("DeleteConfirmed")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {

@@ -145,6 +145,9 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("FinishedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
@@ -327,7 +330,7 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                         .IsRequired();
 
                     b.HasOne("WarsztatSamochodowyApp.Models.ServiceTask", "ServiceTask")
-                        .WithMany()
+                        .WithMany("UsedParts")
                         .HasForeignKey("ServiceTaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -351,6 +354,11 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.ServiceOrder", b =>
                 {
                     b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("WarsztatSamochodowyApp.Models.ServiceTask", b =>
+                {
+                    b.Navigation("UsedParts");
                 });
 #pragma warning restore 612, 618
         }

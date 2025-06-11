@@ -17,9 +17,8 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group">
-                <label asp-for="OrderDate" class="control-label"></label>
-                <input asp-for="OrderDate" class="form-control" type="date"/>
-                <span asp-validation-for="OrderDate" class="text-danger"></span>
+                <label>Data zamówienia</label>
+                <input class="form-control" value="@Model.OrderDate.ToString("yyyy-MM-dd HH:mm")" readonly />
             </div>
 
             <div class="form-group">

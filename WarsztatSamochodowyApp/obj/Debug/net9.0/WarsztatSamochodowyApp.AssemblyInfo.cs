@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WarsztatSamochodowyApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+687efb5f53fa7b2463d0fd29619177d72e2e5084")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+92ecb73ef38b1d8fba48640c6b43ac7e7eed2495")]
 [assembly: System.Reflection.AssemblyProductAttribute("WarsztatSamochodowyApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WarsztatSamochodowyApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
