@@ -20,7 +20,14 @@
                 <label>Data zamówienia</label>
                 <input class="form-control" value="@Model.OrderDate.ToString("yyyy-MM-dd HH:mm")" readonly />
             </div>
+            
+            <div class="form-group">
+                <label class="control-label">Data zakończenia</label>
+                <input class="form-control" value="@Model.FinishedDate?.ToString("yyyy-MM-dd HH:mm")" readonly />
+            </div>
 
+            
+            
             <div class="form-group">
                 <label asp-for="Status" class="control-label"></label>
                 <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<ServiceOrderStatus>()"></select>

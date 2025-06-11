@@ -145,7 +145,7 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("FinishedDate")
+                    b.Property<DateTime?>("FinishedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("OrderDate")

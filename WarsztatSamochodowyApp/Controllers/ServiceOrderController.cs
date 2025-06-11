@@ -161,8 +161,7 @@ public class ServiceOrderController : Controller
                     .FirstOrDefaultAsync(o => o.Id == id);
 
                 if (existingOrder == null) return NotFound();
-
-                existingOrder.OrderDate = serviceOrder.OrderDate;
+                
                 existingOrder.Status = serviceOrder.Status;
                 if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
                 {
