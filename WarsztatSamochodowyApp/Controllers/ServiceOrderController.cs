@@ -18,11 +18,21 @@ public class ServiceOrderController : Controller
     }
 
     // GET: ServiceOrder
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(ServiceOrderStatus? statusFilter)
     {
         try
         {
-            var serviceOrders = await _context.ServiceOrders.Include(v => v.Vehicle).ToListAsync();
+            var query = _context.ServiceOrders.Include(v => v.Vehicle).AsQueryable();
+
+            if (statusFilter.HasValue) query = query.Where(o => o.Status == statusFilter.Value);
+
+            var serviceOrders = await query.ToListAsync();
+
+            // Do widoku przekaż też listę statusów do dropdowna
+            ViewData["StatusFilter"] = new SelectList(Enum.GetValues(typeof(ServiceOrderStatus))
+                .Cast<ServiceOrderStatus>()
+                .Select(s => new { Value = s, Text = s.ToString() }), "Value", "Text", statusFilter);
+
             return View(serviceOrders);
         }
         catch (Exception ex)
@@ -31,6 +41,7 @@ public class ServiceOrderController : Controller
             return StatusCode(500, "Wystąpił błąd podczas pobierania zleceń.");
         }
     }
+
 
     public async Task<IActionResult> Details(int? id)
     {

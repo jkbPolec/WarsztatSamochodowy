@@ -1,4 +1,4 @@
-﻿@model IEnumerable<WarsztatSamochodowyApp.Models.ServiceOrder>
+﻿@model IEnumerable<ServiceOrder>
 
 @{
     ViewData["Title"] = "Lista zleceń serwisowych";
@@ -7,6 +7,19 @@
 
 <h1>Lista zleceń serwisowych</h1>
 
+
+<form method="get" asp-action="Index" class="mb-3">
+    <div class="form-group">
+        <label for="statusFilter">Filtruj po statusie:</label>
+        <select id="statusFilter" name="statusFilter" class="form-control" onchange="this.form.submit()">
+            <option value="">Wszystkie</option>
+            @foreach (var item in (SelectList)ViewData["StatusFilter"])
+            {
+                <option value="@item.Value" selected="@(item.Selected ? "selected" : null)">@item.Text</option>
+            }
+        </select>
+    </div>
+</form>
 <p>
     <a asp-action="Create" class="btn btn-primary">Dodaj nowe zlecenie</a>
 </p>
