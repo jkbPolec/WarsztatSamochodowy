@@ -98,6 +98,10 @@
               "target": "Package",
               "version": "[5.5.0, )"
             },
+            "QuestPDF": {
+              "target": "Package",
+              "version": "[2025.5.1, )"
+            },
             "Riok.Mapperly": {
               "target": "Package",
               "version": "[4.2.1, )"

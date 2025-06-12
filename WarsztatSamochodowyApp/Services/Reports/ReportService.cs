@@ -70,4 +70,29 @@ public class ReportService : IReportService
 
         return report;
     }
+    
+    public async Task<List<MonthlyRepairSummaryDto>> GenerateMonthlySummaryAsync(int year, int month)
+    {
+        return await _context.ServiceOrders
+            .AsNoTracking()
+            .Where(so => so.OrderDate.Year == year && so.OrderDate.Month == month)
+            .Include(so => so.Vehicle).ThenInclude(v => v.Client)
+            .Include(so => so.ServiceTasks).ThenInclude(st => st.UsedParts).ThenInclude(up => up.Part)
+            .GroupBy(so => new
+            {
+                ClientFullName = so.Vehicle.Client.FirstName + " " + so.Vehicle.Client.LastName,
+                VehicleIdentifier = so.Vehicle.Vin + " - " + so.Vehicle.RegistrationNumber
+            })
+            .Select(g => new MonthlyRepairSummaryDto
+            {
+                ClientFullName = g.Key.ClientFullName,
+                VehicleIdentifier = g.Key.VehicleIdentifier,
+                OrdersCount = g.Count(),
+                TotalCost = g.Sum(so =>
+                    so.ServiceTasks.Sum(st => st.Price) +
+                    so.ServiceTasks.SelectMany(st => st.UsedParts).Sum(up => up.Quantity * up.Part.Price))
+            })
+            .OrderBy(r => r.ClientFullName)
+            .ToListAsync();
+    }
 }

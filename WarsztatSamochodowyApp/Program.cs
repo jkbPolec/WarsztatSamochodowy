@@ -7,6 +7,7 @@ using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Services;
 using WarsztatSamochodowyApp.Services.Authorization;
+using WarsztatSamochodowyApp.Services.Pdf;
 using WarsztatSamochodowyApp.Services.Reports;
 
 namespace WarsztatSamochodowyApp;
@@ -56,6 +57,9 @@ public static class Program
         builder.Services.AddTransient<IEmailSender, DummyEmailSender>();
 
         builder.Services.AddScoped<IReportService, ReportService>();
+        
+        builder.Services.AddTransient<MonthlyRepairPdfExporter>();
+
         
         var app = builder.Build();
 

@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Raport miesięczny napraw";
+}
+
+<h2>@ViewData["Title"]</h2>
+<hr/>
+
+<form asp-action="GenerateMonthlySummaryPdf" method="post">
+    @Html.AntiForgeryToken()
+    <div class="form-row">
+        <div class="form-group col-md-2">
+            <label for="month">Miesiąc</label>
+            <input type="number" name="month" class="form-control" min="1" max="12" required />
+        </div>
+        <div class="form-group col-md-2">
+            <label for="year">Rok</label>
+            <input type="number" name="year" class="form-control" min="2000" required />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Pobierz raport PDF</button>
+</form>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info mt-3">@TempData["Message"]</div>
+}
