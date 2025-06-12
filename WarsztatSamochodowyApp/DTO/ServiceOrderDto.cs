@@ -15,15 +15,6 @@ public class ServiceOrderDto
     public List<ServiceTaskDto> ServiceTasks { get; set; } = new();
 }
 
-public class VehicleDto
-{
-    public int Id { get; set; }
-    public string LicensePlate { get; set; } = null!;
-
-    public string Model { get; set; } = null!;
-    // dodaj co tam jeszcze chcesz z pojazdu
-}
-
 public class ServiceTaskDto
 {
     public int Id { get; set; }
