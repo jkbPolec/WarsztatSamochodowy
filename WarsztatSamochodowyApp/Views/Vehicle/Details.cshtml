@@ -1,4 +1,4 @@
-@model Vehicle
+@model WarsztatSamochodowyApp.DTO.VehicleDto
 
 @{
     ViewData["Title"] = "Details";
@@ -24,10 +24,10 @@
             @Html.DisplayFor(model => model.RegistrationNumber)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Client)
+            @Html.DisplayNameFor(model => model.ClientFullName)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Client.FirstName) @Html.DisplayFor(model => model.Client.LastName)
+            @Html.DisplayFor(model => model.ClientFullName)
         </dd>
         <dt class="col-sm-2">
             Zdjencie

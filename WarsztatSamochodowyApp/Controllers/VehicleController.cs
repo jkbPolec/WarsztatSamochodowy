@@ -2,7 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
+using WarsztatSamochodowyApp.DTO;
+using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
+
+// dodaj namespace DTO
+// dodaj mapper manualny
+// using WarsztatSamochodowyApp.Mappers; // jeśli tam masz VehicleMapperManual
 
 namespace WarsztatSamochodowyApp.Controllers;
 
@@ -10,11 +16,13 @@ public class VehicleController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<VehicleController> _logger;
+    private readonly VehicleMapper _mapper;
 
-    public VehicleController(ApplicationDbContext context, ILogger<VehicleController> logger)
+    public VehicleController(ApplicationDbContext context, ILogger<VehicleController> logger, VehicleMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     // GET: Vehicle
@@ -22,8 +30,9 @@ public class VehicleController : Controller
     {
         try
         {
-            var vehicles = _context.Vehicles.Include(v => v.Client);
-            return View(await vehicles.ToListAsync());
+            var vehicles = await _context.Vehicles.Include(v => v.Client).ToListAsync();
+            var vehicleDtos = vehicles.Select(v => _mapper.ToDto(v)).ToList();
+            return View(vehicleDtos); // przekazujemy listę DTO do widoku
         }
         catch (Exception ex)
         {
@@ -39,12 +48,11 @@ public class VehicleController : Controller
 
         try
         {
-            var vehicle = await _context.Vehicles
-                .Include(v => v.Client)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var vehicle = await _context.Vehicles.Include(v => v.Client).FirstOrDefaultAsync(m => m.Id == id);
             if (vehicle == null) return NotFound();
 
-            return View(vehicle);
+            var dto = _mapper.ToDto(vehicle);
+            return View(dto); // przekazujemy DTO do widoku
         }
         catch (Exception ex)
         {
@@ -58,7 +66,6 @@ public class VehicleController : Controller
     {
         try
         {
-            // Poprawiamy listę wyboru na bardziej czytelną (np. LastName klienta)
             ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName");
             return View();
         }
@@ -70,10 +77,9 @@ public class VehicleController : Controller
     }
 
     // POST: Vehicle/Create
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Vehicle vehicle, IFormFile ImageFile)
+    public async Task<IActionResult> Create(VehicleDto dto, IFormFile ImageFile)
     {
         try
         {
@@ -91,11 +97,16 @@ public class VehicleController : Controller
                     await ImageFile.CopyToAsync(stream);
                 }
 
-                vehicle.ImageUrl = "/images/" + fileName; // zapisz ścieżkę do bazy
+                dto.ImageUrl = "/images/" + fileName;
             }
 
             if (ModelState.IsValid)
             {
+                var vehicle = _mapper.FromDto(dto);
+
+                // Jeśli chcesz, możesz tu załadować Client z bazy i przypisać do pojazdu:
+                vehicle.Client = await _context.Clients.FindAsync(dto.ClientId);
+
                 _context.Add(vehicle);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -103,19 +114,12 @@ public class VehicleController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Błąd podczas tworzenia pojazdu (NLog).");
+            _logger.LogError(ex, "Błąd podczas tworzenia pojazdu.");
             return StatusCode(500, "Wystąpił błąd podczas tworzenia pojazdu.");
         }
 
-        ViewData["ClientId"] = new SelectList(_context.Set<Client>(), "Id", "LastName", vehicle.ClientId);
-        return View(vehicle);
-    }
-
-    // Reszta akcji (Edit, Delete) bez zmian...
-
-    private bool VehicleExists(int id)
-    {
-        return _context.Vehicles.Any(e => e.Id == id);
+        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName", dto.ClientId);
+        return View(dto);
     }
 
     // GET: Vehicle/Edit/5
@@ -123,24 +127,29 @@ public class VehicleController : Controller
     {
         if (id == null) return NotFound();
 
-        var vehicle = await _context.Vehicles.FindAsync(id);
+        var vehicle = await _context.Vehicles.Include(v => v.Client).FirstOrDefaultAsync(v => v.Id == id);
         if (vehicle == null) return NotFound();
 
-        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName", vehicle.ClientId);
-        return View(vehicle);
+        var dto = _mapper.ToDto(vehicle);
+
+        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName", dto.ClientId);
+        return View(dto);
     }
 
     // POST: Vehicle/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Vehicle vehicle)
+    public async Task<IActionResult> Edit(int id, VehicleDto dto)
     {
-        if (id != vehicle.Id) return NotFound();
+        if (id != dto.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
             try
             {
+                var vehicle = _mapper.FromDto(dto);
+                vehicle.Client = await _context.Clients.FindAsync(dto.ClientId);
+
                 _context.Update(vehicle);
                 await _context.SaveChangesAsync();
             }
@@ -155,8 +164,8 @@ public class VehicleController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName", vehicle.ClientId);
-        return View(vehicle);
+        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName", dto.ClientId);
+        return View(dto);
     }
 
     // GET: Vehicle/Delete/5
@@ -164,12 +173,11 @@ public class VehicleController : Controller
     {
         if (id == null) return NotFound();
 
-        var vehicle = await _context.Vehicles
-            .Include(v => v.Client)
-            .FirstOrDefaultAsync(m => m.Id == id);
+        var vehicle = await _context.Vehicles.Include(v => v.Client).FirstOrDefaultAsync(m => m.Id == id);
         if (vehicle == null) return NotFound();
 
-        return View(vehicle);
+        var dto = _mapper.ToDto(vehicle);
+        return View(dto);
     }
 
     // POST: Vehicle/Delete/5
@@ -203,7 +211,7 @@ public class VehicleController : Controller
             Vin = "1234567890VIN",
             RegistrationNumber = "ABC1234",
             ImageUrl = "https://example.com/car.jpg",
-            ClientId = 2 // podaj tutaj istniejące Id klienta z bazy
+            ClientId = 2
         };
 
         _context.Vehicles.Add(vehicle);
