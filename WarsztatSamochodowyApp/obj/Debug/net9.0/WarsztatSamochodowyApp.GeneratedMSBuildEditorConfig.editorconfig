@@ -140,6 +140,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGFydFR5cGVcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/xszym/RiderProjects/WarsztatSamochodowy/WarsztatSamochodowyApp/Views/Reports/ClientRepairs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xDbGllbnRSZXBhaXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/xszym/RiderProjects/WarsztatSamochodowy/WarsztatSamochodowyApp/Views/ServiceOrder/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmljZU9yZGVyXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -186,6 +190,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/xszym/RiderProjects/WarsztatSamochodowy/WarsztatSamochodowyApp/Views/Shared/Components/Header/PartsButtons.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcSGVhZGVyXFBhcnRzQnV0dG9ucy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/xszym/RiderProjects/WarsztatSamochodowy/WarsztatSamochodowyApp/Views/Shared/Components/Header/ReportsButton.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcSGVhZGVyXFJlcG9ydHNCdXR0b24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/xszym/RiderProjects/WarsztatSamochodowy/WarsztatSamochodowyApp/Views/Shared/Components/Header/ServiceOrderButton.cshtml]

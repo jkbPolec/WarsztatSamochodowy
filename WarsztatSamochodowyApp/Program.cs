@@ -5,6 +5,7 @@ using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Services;
 using WarsztatSamochodowyApp.Services.Authorization;
+using WarsztatSamochodowyApp.Services.Reports;
 
 namespace WarsztatSamochodowyApp;
 
@@ -45,7 +46,8 @@ public static class Program
 
         builder.Services.AddTransient<IEmailSender, DummyEmailSender>();
 
-
+        builder.Services.AddScoped<IReportService, ReportService>();
+        
         var app = builder.Build();
 
         using (var scope = app.Services.CreateScope())

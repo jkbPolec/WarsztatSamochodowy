@@ -33,6 +33,8 @@
 
     <ItemGroup>
         <_ContentIncludedByDefault Remove="Views\Shared\Components\AdminPanelButton\Default.cshtml"/>
+        <_ContentIncludedByDefault Remove="Views\Report\RepairCosts.cshtml" />
+        <_ContentIncludedByDefault Remove="Views\Report\SelectClientVehicle.cshtml" />
     </ItemGroup>
 
 </Project>
