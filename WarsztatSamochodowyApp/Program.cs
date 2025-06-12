@@ -14,10 +14,13 @@ namespace WarsztatSamochodowyApp;
 
 public static class Program
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     public static async Task Main(string[] args)
     {
+        
+        Logger.Error("Testowy błąd");
         var logger = LogManager.Setup().LoadConfigurationFromFile("nlog.config").GetCurrentClassLogger();
-
+        
         try
         {
             var builder = WebApplication.CreateBuilder(args);
