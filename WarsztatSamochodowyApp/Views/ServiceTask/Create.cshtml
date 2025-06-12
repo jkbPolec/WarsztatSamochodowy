@@ -1,8 +1,8 @@
-@model WarsztatSamochodowyApp.Models.ServiceTask
+@model WarsztatSamochodowyApp.DTO.ServiceTaskDto
 
 @{
     ViewData["Title"] = "Create Service Task";
-    var allParts = ViewBag.AllParts as List<WarsztatSamochodowyApp.Models.Part>;
+    var allParts = ViewBag.AllParts as List<Part>;
 }
 
 <h2>Create Service Task</h2>
@@ -10,7 +10,7 @@
 <form asp-action="Create" method="post">
     <div class="form-group">
         <label asp-for="Name"></label>
-        <input asp-for="Name" class="form-control" />
+        <input asp-for="Name" class="form-control"/>
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
     <div class="form-group">
@@ -20,34 +20,34 @@
     </div>
     <div class="form-group">
         <label asp-for="Price"></label>
-        <input asp-for="Price" type="number" step="0.01" class="form-control" />
+        <input asp-for="Price" type="number" step="0.01" class="form-control"/>
         <span asp-validation-for="Price" class="text-danger"></span>
     </div>
 
     <h4>Used Parts</h4>
     <table class="table table-bordered">
         <thead>
-            <tr>
-                <th>Part Name</th>
-                <th>Price</th>
-                <th>Quantity</th>
-            </tr>
+        <tr>
+            <th>Part Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+        </tr>
         </thead>
         <tbody>
-            @if (allParts != null)
+        @if (allParts != null)
+        {
+            for (var i = 0; i < allParts.Count; i++)
             {
-                for (int i = 0; i < allParts.Count; i++)
-                {
-                    <tr>
-                        <td>@allParts[i].Name</td>
-                        <td>@allParts[i].Price zł</td>
-                        <td>
-                            <input type="hidden" name="partIds" value="@allParts[i].Id" />
-                            <input type="number" name="quantities" min="0" value="0" class="form-control" />
-                        </td>
-                    </tr>
-                }
+                <tr>
+                    <td>@allParts[i].Name</td>
+                    <td>@allParts[i].Price zł</td>
+                    <td>
+                        <input type="hidden" name="partIds" value="@allParts[i].Id"/>
+                        <input type="number" name="quantities" min="0" value="0" class="form-control"/>
+                    </td>
+                </tr>
             }
+        }
         </tbody>
     </table>
 
@@ -56,5 +56,5 @@
 </form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

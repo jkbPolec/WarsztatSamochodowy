@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
-using WarsztatSamochodowyApp.Models;
+using WarsztatSamochodowyApp.DTO;
+using WarsztatSamochodowyApp.Mappers;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
@@ -9,11 +10,14 @@ public class ServiceTaskController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ServiceTaskController> _logger;
+    private readonly ServicesMapper _mapper;
 
-    public ServiceTaskController(ApplicationDbContext context, ILogger<ServiceTaskController> logger)
+    public ServiceTaskController(ApplicationDbContext context, ILogger<ServiceTaskController> logger,
+        ServicesMapper mapper)
     {
         _context = context;
         _logger = logger;
+        _mapper = mapper;
     }
 
     public async Task<IActionResult> Index()
@@ -25,7 +29,8 @@ public class ServiceTaskController : Controller
                 .ThenInclude(up => up.Part)
                 .ToListAsync();
 
-            return View(tasks);
+            var dtos = tasks.Select(_mapper.ToDto).ToList();
+            return View(dtos);
         }
         catch (Exception ex)
         {
@@ -47,7 +52,8 @@ public class ServiceTaskController : Controller
 
             if (serviceTask == null) return NotFound();
 
-            return View(serviceTask);
+            var dto = _mapper.ToDto(serviceTask);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -60,9 +66,8 @@ public class ServiceTaskController : Controller
     {
         try
         {
-            var allParts = await _context.Parts.ToListAsync();
-            ViewBag.AllParts = allParts;
-            return View();
+            ViewBag.AllParts = await _context.Parts.ToListAsync();
+            return View(new ServiceTaskDto());
         }
         catch (Exception ex)
         {
@@ -73,24 +78,24 @@ public class ServiceTaskController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ServiceTask serviceTask, List<int> partIds, List<int> quantities)
+    public async Task<IActionResult> Create(ServiceTaskDto dto, List<int> partIds, List<int> quantities)
     {
         if (!ModelState.IsValid)
         {
             ViewBag.AllParts = await _context.Parts.ToListAsync();
-            return View(serviceTask);
+            return View(dto);
         }
 
         try
         {
             if (partIds != null && quantities != null && partIds.Count == quantities.Count)
-                serviceTask.UsedParts = partIds.Select((partId, i) => new UsedPart
-                {
-                    PartId = partId,
-                    Quantity = quantities[i]
-                }).Where(up => up.Quantity > 0).ToList();
+                dto.UsedPartIds = partIds.Zip(quantities, (id, q) => new { id, q })
+                    .Where(x => x.q > 0)
+                    .Select(x => x.id)
+                    .ToList();
 
-            _context.ServiceTasks.Add(serviceTask);
+            var entity = _mapper.ToEntity(dto);
+            _context.ServiceTasks.Add(entity);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
@@ -115,7 +120,9 @@ public class ServiceTaskController : Controller
             if (serviceTask == null) return NotFound();
 
             ViewBag.AllParts = await _context.Parts.ToListAsync();
-            return View(serviceTask);
+
+            var dto = _mapper.ToDto(serviceTask);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -126,14 +133,14 @@ public class ServiceTaskController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceTask serviceTask, List<int> partIds, List<int> quantities)
+    public async Task<IActionResult> Edit(int id, ServiceTaskDto dto, List<int> partIds, List<int> quantities)
     {
-        if (id != serviceTask.Id) return NotFound();
+        if (id != dto.Id) return NotFound();
 
         if (!ModelState.IsValid)
         {
             ViewBag.AllParts = await _context.Parts.ToListAsync();
-            return View(serviceTask);
+            return View(dto);
         }
 
         try
@@ -144,20 +151,15 @@ public class ServiceTaskController : Controller
 
             if (existingTask == null) return NotFound();
 
-            existingTask.Name = serviceTask.Name;
-            existingTask.Description = serviceTask.Description;
-            existingTask.Price = serviceTask.Price;
-
-            _context.UsedParts.RemoveRange(existingTask.UsedParts);
-
             if (partIds != null && quantities != null && partIds.Count == quantities.Count)
-                existingTask.UsedParts = partIds.Select((partId, i) => new UsedPart
-                {
-                    PartId = partId,
-                    Quantity = quantities[i]
-                }).Where(up => up.Quantity > 0).ToList();
+                dto.UsedPartIds = partIds.Zip(quantities, (pid, q) => new { pid, q })
+                    .Where(x => x.q > 0)
+                    .Select(x => x.pid)
+                    .ToList();
 
+            _mapper.UpdateEntity(dto, existingTask);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
@@ -178,7 +180,8 @@ public class ServiceTaskController : Controller
 
             if (serviceTask == null) return NotFound();
 
-            return View(serviceTask);
+            var dto = _mapper.ToDto(serviceTask);
+            return View(dto);
         }
         catch (Exception ex)
         {

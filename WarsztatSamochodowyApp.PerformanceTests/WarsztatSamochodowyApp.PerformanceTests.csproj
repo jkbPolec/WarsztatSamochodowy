@@ -17,4 +17,8 @@
         <ProjectReference Include="..\WarsztatSamochodowyApp\WarsztatSamochodowyApp.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Folder Include="reports\"/>
+    </ItemGroup>
+
 </Project>
