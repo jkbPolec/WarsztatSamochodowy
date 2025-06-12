@@ -1,0 +1,145 @@
+﻿@using WarsztatSamochodowyApp.DTO
+@model dynamic
+@{
+    ViewData["Title"] = "Raport Napraw Klienta";
+    var report = ViewBag.ReportData as ClientRepairReportViewModel;
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h3>Wybierz parametry raportu</h3>
+    </div>
+    <div class="card-body">
+        <form id="report-form" asp-action="GenerateClientRepairsReport" method="post">
+            @Html.AntiForgeryToken()
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    <label for="clientId" class="control-label">Klient</label>
+                    <select id="client-select" name="clientId" class="form-control" asp-items="ViewBag.Clients">
+                        <option value="">-- Wybierz klienta --</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="vehicleId" class="control-label">Pojazd</label>
+                    <select id="vehicle-select" name="vehicleId" class="form-control">
+                        <option value="">-- Najpierw wybierz klienta --</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label class="control-label">Miesiąc (opcjonalnie)</label>
+                    <div class="input-group">
+                        <input type="number" name="month" class="form-control" placeholder="Miesiąc (np. 5)" min="1" max="12" />
+                        <input type="number" name="year" class="form-control" placeholder="Rok (np. 2024)" min="2000" />
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mt-3">
+                <button type="submit" class="btn btn-primary">Generuj Raport</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (report != null)
+{
+    <hr />
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Wyniki Raportu</h3>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col"><strong>Klient:</strong> @report.ClientFullName</div>
+                <div class="col"><strong>Pojazd:</strong> @report.VehicleIdentifier</div>
+                <div class="col"><strong>Okres:</strong> @report.ReportDateRange</div>
+            </div>
+
+            @if (report.Repairs.Any())
+            {
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-light">
+                    <tr>
+                        <th>Data Zlecenia</th>
+                        <th>Wykonane Prace</th>
+                        <th>Status</th>
+                        <th class="text-right">Koszt Robocizny</th>
+                        <th class="text-right">Koszt Części</th>
+                        <th class="text-right">Suma</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in report.Repairs)
+                    {
+                        <tr>
+                            <td>@item.OrderDate.ToShortDateString()</td>
+                            <td>@string.Join(", ", item.TasksPerformed)</td>
+                            <td>@item.Status</td>
+                            <td class="text-right">@item.LaborCost.ToString("C")</td>
+                            <td class="text-right">@item.PartsCost.ToString("C")</td>
+                            <td class="text-right font-weight-bold">@item.TotalCost.ToString("C")</td>
+                        </tr>
+                    }
+                    </tbody>
+                    <tfoot>
+                    <tr class="bg-light">
+                        <td colspan="5" class="text-right font-weight-bold">RAZEM:</td>
+                        <td class="text-right font-weight-bold h5">@report.GrandTotal.ToString("C")</td>
+                    </tr>
+                    </tfoot>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-info">Brak napraw spełniających podane kryteria.</div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // AJAX do ładowania pojazdów po wybraniu klienta
+            $('#client-select').on('change', function () {
+                var clientId = $(this).val();
+                var vehicleSelect = $('#vehicle-select');
+                vehicleSelect.empty().append($('<option></option>').val('').text('-- Ładowanie pojazdów... --'));
+
+                if (!clientId) {
+                    vehicleSelect.empty().append($('<option></option>').val('').text('-- Najpierw wybierz klienta --'));
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("GetVehiclesForClient", "Reports")',
+                    type: 'GET',
+                    data: { clientId: clientId },
+                    success: function (vehicles) {
+                        vehicleSelect.empty().append($('<option></option>').val('').text('-- Wybierz pojazd --'));
+                        $.each(vehicles, function (i, vehicle) {
+                            vehicleSelect.append($('<option></option>').val(vehicle.id).text(vehicle.text));
+                        });
+                    },
+                    error: function () {
+                        alert("Wystąpił błąd podczas ładowania pojazdów.");
+                    }
+                });
+            });
+
+            // Reset formularza jeśli jest raport, aby pola się wyczyściły
+            var reportExists = @((report != null).ToString().ToLower());
+            if (reportExists) {
+                // reset dropdown klienta
+                $('#client-select').val('');
+                // reset dropdown pojazdu
+                $('#vehicle-select').empty().append($('<option></option>').val('').text('-- Najpierw wybierz klienta --'));
+                // reset pól miesiąc i rok
+                $('input[name="month"]').val('');
+                $('input[name="year"]').val('');
+            }
+        });
+    </script>
+}

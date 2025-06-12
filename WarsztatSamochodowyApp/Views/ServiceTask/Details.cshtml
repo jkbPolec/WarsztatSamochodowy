@@ -1,37 +1,46 @@
 @model WarsztatSamochodowyApp.Models.ServiceTask
 
 @{
-    ViewData["Title"] = "Details";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Service Task Details";
 }
 
-<h1>Details</h1>
+<h2>Service Task Details</h2>
 
 <div>
-    <h4>ServiceTask</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Price)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Price)
-        </dd>
-    </dl>
+    <h4>@Model.Name</h4>
+    <p><strong>Description:</strong> @Model.Description</p>
+    <p><strong>Price:</strong> @Model.Price.ToString("C")</p>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<h4>Used Parts</h4>
+@if (Model.UsedParts != null && Model.UsedParts.Any())
+{
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Part Name</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var usedPart in Model.UsedParts)
+        {
+            <tr>
+                <td>@usedPart.Part?.Name</td>
+                <td>@usedPart.Quantity</td>
+                <td>@usedPart.Part?.Price.ToString("C")</td>
+                <td>@((usedPart.Quantity * (usedPart.Part?.Price ?? 0)).ToString("C"))</td>
+
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No parts used in this service task.</p>
+}
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

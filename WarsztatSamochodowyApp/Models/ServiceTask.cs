@@ -1,4 +1,6 @@
-﻿namespace WarsztatSamochodowyApp.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WarsztatSamochodowyApp.Models;
 
 public class ServiceTask
 {
@@ -9,4 +11,12 @@ public class ServiceTask
 
     // Tworzy relacje wiele do wielu z ServiceOrder
     public ICollection<ServiceOrder> ServiceOrders { get; set; } = new List<ServiceOrder>();
+    
+    public ICollection<UsedPart> UsedParts { get; set; } = new List<UsedPart>();
+    
+    [NotMapped]
+    public decimal PartsCost => UsedParts.Sum(up => up.Part.Price * up.Quantity);
+
+    [NotMapped]
+    public decimal TotalCost => Price + PartsCost;
 }

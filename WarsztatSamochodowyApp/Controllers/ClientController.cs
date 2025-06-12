@@ -1,157 +1,176 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
-using WarsztatSamochodowyApp.Models;
+using WarsztatSamochodowyApp.DTO;
 
-namespace WarsztatSamochodowyApp.Controllers
+namespace WarsztatSamochodowyApp.Controllers;
+
+public class ClientController : Controller
 {
-    public class ClientController : Controller
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<ClientController> _logger;
+    private readonly ClientMapper _mapper;
+
+    public ClientController(ApplicationDbContext context, ClientMapper mapper, ILogger<ClientController> logger)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+        _mapper = mapper;
+        _logger = logger;
+    }
 
-        public ClientController(ApplicationDbContext context)
+    // GET: Client
+    public async Task<IActionResult> Index()
+    {
+        try
         {
-            _context = context;
+            var clients = await _context.Clients.ToListAsync();
+            var dtos = clients.Select(c => _mapper.ToDto(c)).ToList();
+            return View(dtos);
         }
-
-        // GET: Client
-        public async Task<IActionResult> Index()
+        catch (Exception ex)
         {
-            return View(await _context.Clients.ToListAsync());
+            _logger.LogError(ex, "Błąd podczas pobierania listy klientów");
+            return StatusCode(500, "Wystąpił błąd podczas pobierania danych.");
         }
+    }
 
-        // GET: Client/Details/5
-        public async Task<IActionResult> Details(int? id)
+    // GET: Client/Details/5
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
+
+        try
         {
-            if (id == null)
+            var client = await _context.Clients.FindAsync(id);
+            if (client == null) return NotFound();
+
+            var dto = _mapper.ToDto(client);
+            return View(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania szczegółów klienta o Id={ClientId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas pobierania danych.");
+        }
+    }
+
+    // GET: Client/Create
+    public IActionResult Create()
+    {
+        return View(new ClientDto());
+    }
+
+    // POST: Client/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(ClientDto dto)
+    {
+        if (ModelState.IsValid)
+            try
             {
-                return NotFound();
-            }
-
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (client == null)
-            {
-                return NotFound();
-            }
-
-            return View(client);
-        }
-
-        // GET: Client/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Client/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,Email,PhoneNumber")] Client client)
-        {
-            if (ModelState.IsValid)
-            {
+                var client = _mapper.ToEntity(dto);
                 _context.Add(client);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(client);
-        }
-
-        // GET: Client/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                _logger.LogError(ex, "Błąd podczas tworzenia klienta");
+                return StatusCode(500, "Wystąpił błąd podczas zapisywania danych.");
             }
 
-            var client = await _context.Clients.FindAsync(id);
-            if (client == null)
-            {
-                return NotFound();
-            }
-            return View(client);
-        }
+        foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+            _logger.LogError("Błąd walidacji podczas tworzenia klienta: {ErrorMessage}", error.ErrorMessage);
 
-        // POST: Client/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,Email,PhoneNumber")] Client client)
-        {
-            if (id != client.Id)
-            {
-                return NotFound();
-            }
+        return View(dto);
+    }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(client);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ClientExists(client.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(client);
-        }
+    // GET: Client/Edit/5
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null) return NotFound();
 
-        // GET: Client/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (client == null)
-            {
-                return NotFound();
-            }
-
-            return View(client);
-        }
-
-        // POST: Client/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        try
         {
             var client = await _context.Clients.FindAsync(id);
-            if (client != null)
-            {
-                _context.Clients.Remove(client);
-            }
+            if (client == null) return NotFound();
 
+            var dto = _mapper.ToDto(client);
+            return View(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania klienta do edycji o Id={ClientId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas pobierania danych.");
+        }
+    }
+
+    // POST: Client/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ClientDto dto)
+    {
+        if (id != dto.Id) return NotFound();
+
+        if (ModelState.IsValid)
+        {
+            var client = await _context.Clients.FindAsync(id);
+            if (client == null) return NotFound();
+
+            _mapper.UpdateEntity(dto, client);
+
+            _context.Update(client);
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ClientExists(int id)
+        return View(dto);
+    }
+
+    // GET: Client/Delete/5
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null) return NotFound();
+
+        try
         {
-            return _context.Clients.Any(e => e.Id == id);
+            var client = await _context.Clients.FindAsync(id);
+            if (client == null) return NotFound();
+
+            var dto = _mapper.ToDto(client);
+            return View(dto);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania klienta do usunięcia o Id={ClientId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas pobierania danych.");
+        }
+    }
+
+    // POST: Client/Delete/5
+    [HttpPost]
+    [ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var client = await _context.Clients.FindAsync(id);
+        if (client != null)
+        {
+            _context.Clients.Remove(client);
+            _logger.LogInformation("Usunięto klienta o Id={ClientId}", id);
+        }
+        else
+        {
+            _logger.LogWarning("Nie znaleziono klienta do usunięcia o Id={ClientId}", id);
+        }
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool ClientExists(int id)
+    {
+        return _context.Clients.Any(e => e.Id == id);
     }
 }

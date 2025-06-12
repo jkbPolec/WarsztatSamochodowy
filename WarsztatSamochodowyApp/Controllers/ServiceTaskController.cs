@@ -1,157 +1,217 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.Models;
 
-namespace WarsztatSamochodowyApp.Controllers
+namespace WarsztatSamochodowyApp.Controllers;
+
+public class ServiceTaskController : Controller
 {
-    public class ServiceTaskController : Controller
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<ServiceTaskController> _logger;
+
+    public ServiceTaskController(ApplicationDbContext context, ILogger<ServiceTaskController> logger)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+        _logger = logger;
+    }
 
-        public ServiceTaskController(ApplicationDbContext context)
+    public async Task<IActionResult> Index()
+    {
+        try
         {
-            _context = context;
+            var tasks = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .ThenInclude(up => up.Part)
+                .ToListAsync();
+
+            return View(tasks);
         }
-
-        // GET: ServiceTask
-        public async Task<IActionResult> Index()
+        catch (Exception ex)
         {
-            return View(await _context.ServiceTasks.ToListAsync());
+            _logger.LogError(ex, "Błąd podczas pobierania listy zadań serwisowych.");
+            return StatusCode(500, "Wystąpił błąd.");
         }
+    }
 
-        // GET: ServiceTask/Details/5
-        public async Task<IActionResult> Details(int? id)
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
+
+        try
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
             var serviceTask = await _context.ServiceTasks
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
+                .Include(t => t.UsedParts)
+                .ThenInclude(up => up.Part)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (serviceTask == null) return NotFound();
 
             return View(serviceTask);
         }
-
-        // GET: ServiceTask/Create
-        public IActionResult Create()
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Błąd podczas pobierania szczegółów zadania serwisowego o ID {TaskId}", id);
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
+
+    public async Task<IActionResult> Create()
+    {
+        try
+        {
+            var allParts = await _context.Parts.ToListAsync();
+            ViewBag.AllParts = allParts;
             return View();
         }
-
-        // POST: ServiceTask/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,Price")] ServiceTask serviceTask)
+        catch (Exception ex)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(serviceTask);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+            _logger.LogError(ex, "Błąd podczas przygotowywania formularza tworzenia zadania serwisowego.");
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(ServiceTask serviceTask, List<int> partIds, List<int> quantities)
+    {
+        if (!ModelState.IsValid)
+        {
+            ViewBag.AllParts = await _context.Parts.ToListAsync();
             return View(serviceTask);
         }
 
-        // GET: ServiceTask/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        try
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var serviceTask = await _context.ServiceTasks.FindAsync(id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
-            return View(serviceTask);
-        }
-
-        // POST: ServiceTask/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Price")] ServiceTask serviceTask)
-        {
-            if (id != serviceTask.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+            if (partIds != null && quantities != null && partIds.Count == quantities.Count)
+                serviceTask.UsedParts = partIds.Select((partId, i) => new UsedPart
                 {
-                    _context.Update(serviceTask);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ServiceTaskExists(serviceTask.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
+                    PartId = partId,
+                    Quantity = quantities[i]
+                }).Where(up => up.Quantity > 0).ToList();
+
+            _context.ServiceTasks.Add(serviceTask);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas tworzenia zadania serwisowego.");
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
+
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null) return NotFound();
+
+        try
+        {
+            var serviceTask = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (serviceTask == null) return NotFound();
+
+            ViewBag.AllParts = await _context.Parts.ToListAsync();
+            return View(serviceTask);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas przygotowywania edycji zadania o ID {TaskId}", id);
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ServiceTask serviceTask, List<int> partIds, List<int> quantities)
+    {
+        if (id != serviceTask.Id) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.AllParts = await _context.Parts.ToListAsync();
             return View(serviceTask);
         }
 
-        // GET: ServiceTask/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        try
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var existingTask = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .FirstOrDefaultAsync(t => t.Id == id);
 
+            if (existingTask == null) return NotFound();
+
+            existingTask.Name = serviceTask.Name;
+            existingTask.Description = serviceTask.Description;
+            existingTask.Price = serviceTask.Price;
+
+            _context.UsedParts.RemoveRange(existingTask.UsedParts);
+
+            if (partIds != null && quantities != null && partIds.Count == quantities.Count)
+                existingTask.UsedParts = partIds.Select((partId, i) => new UsedPart
+                {
+                    PartId = partId,
+                    Quantity = quantities[i]
+                }).Where(up => up.Quantity > 0).ToList();
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas edycji zadania serwisowego o ID {TaskId}", id);
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
+
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null) return NotFound();
+
+        try
+        {
             var serviceTask = await _context.ServiceTasks
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (serviceTask == null)
-            {
-                return NotFound();
-            }
+
+            if (serviceTask == null) return NotFound();
 
             return View(serviceTask);
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas ładowania zadania do usunięcia o ID {TaskId}", id);
+            return StatusCode(500, "Wystąpił błąd.");
+        }
+    }
 
-        // POST: ServiceTask/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+    [HttpPost]
+    [ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        try
         {
             var serviceTask = await _context.ServiceTasks.FindAsync(id);
             if (serviceTask != null)
             {
                 _context.ServiceTasks.Remove(serviceTask);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-
-        private bool ServiceTaskExists(int id)
+        catch (Exception ex)
         {
-            return _context.ServiceTasks.Any(e => e.Id == id);
+            _logger.LogError(ex, "Błąd podczas usuwania zadania serwisowego o ID {TaskId}", id);
+            return StatusCode(500, "Wystąpił błąd.");
         }
+    }
+
+    private bool ServiceTaskExists(int id)
+    {
+        return _context.ServiceTasks.Any(e => e.Id == id);
     }
 }

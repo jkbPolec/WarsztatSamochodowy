@@ -22,6 +22,21 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ServiceOrderServiceTask", b =>
+                {
+                    b.Property<int>("ServiceOrdersId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServiceTasksId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ServiceOrdersId", "ServiceTasksId");
+
+                    b.HasIndex("ServiceTasksId");
+
+                    b.ToTable("ServiceOrderServiceTask");
+                });
+
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Client", b =>
                 {
                     b.Property<int>("Id")
@@ -59,6 +74,10 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -69,16 +88,11 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                     b.Property<int>("ServiceOrderId")
                         .HasColumnType("int");
 
-                    b.Property<int>("WorkerId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ServiceOrderId");
 
-                    b.HasIndex("WorkerId");
-
-                    b.ToTable("Comments");
+                    b.ToTable("Comment");
                 });
 
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Part", b =>
@@ -131,6 +145,9 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("FinishedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
@@ -160,15 +177,14 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("ServiceOrderId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ServiceOrderId");
 
                     b.ToTable("ServiceTasks");
                 });
@@ -257,23 +273,30 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                     b.ToTable("Workers");
                 });
 
+            modelBuilder.Entity("ServiceOrderServiceTask", b =>
+                {
+                    b.HasOne("WarsztatSamochodowyApp.Models.ServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceOrdersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WarsztatSamochodowyApp.Models.ServiceTask", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceTasksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Comment", b =>
                 {
                     b.HasOne("WarsztatSamochodowyApp.Models.ServiceOrder", "ServiceOrder")
-                        .WithMany()
+                        .WithMany("Comments")
                         .HasForeignKey("ServiceOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WarsztatSamochodowyApp.Models.Worker", "Worker")
-                        .WithMany()
-                        .HasForeignKey("WorkerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("ServiceOrder");
-
-                    b.Navigation("Worker");
                 });
 
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Part", b =>
@@ -298,17 +321,6 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("WarsztatSamochodowyApp.Models.ServiceTask", b =>
-                {
-                    b.HasOne("WarsztatSamochodowyApp.Models.ServiceOrder", "ServiceOrder")
-                        .WithMany()
-                        .HasForeignKey("ServiceOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ServiceOrder");
-                });
-
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.UsedPart", b =>
                 {
                     b.HasOne("WarsztatSamochodowyApp.Models.Part", "Part")
@@ -318,7 +330,7 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                         .IsRequired();
 
                     b.HasOne("WarsztatSamochodowyApp.Models.ServiceTask", "ServiceTask")
-                        .WithMany()
+                        .WithMany("UsedParts")
                         .HasForeignKey("ServiceTaskId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -337,6 +349,16 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                         .IsRequired();
 
                     b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("WarsztatSamochodowyApp.Models.ServiceOrder", b =>
+                {
+                    b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("WarsztatSamochodowyApp.Models.ServiceTask", b =>
+                {
+                    b.Navigation("UsedParts");
                 });
 #pragma warning restore 612, 618
         }
