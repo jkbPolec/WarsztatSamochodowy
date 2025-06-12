@@ -1,4 +1,6 @@
-﻿namespace WarsztatSamochodowyApp.DTO;
+﻿using WarsztatSamochodowyApp.Models;
+
+namespace WarsztatSamochodowyApp.DTO;
 
 public class ServiceOrderDto
 {
@@ -7,6 +9,7 @@ public class ServiceOrderDto
     public DateTime OrderDate { get; set; }
     public int MechanicId { get; set; }
     public string? MechanicName { get; set; }
+    public ServiceOrderStatus Status { get; set; }
 
     public string? Comments { get; set; }
 

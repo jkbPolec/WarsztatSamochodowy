@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.DTO;
+using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Services.Reports;
 
@@ -13,7 +14,7 @@ public class ReportService : IReportService
         _context = context;
     }
 
-    public async Task<ClientRepairReportViewModel?> GenerateClientRepairsReportAsync(int clientId, int vehicleId, int? year, int? month)
+    public async Task<ClientRepairReportDto?> GenerateClientRepairsReportAsync(int clientId, int vehicleId, int? year, int? month)
     {
         // 1. Znajdź klienta i pojazd, aby upewnić się, że istnieją i są powiązane
         var vehicle = await _context.Vehicles
@@ -44,7 +45,7 @@ public class ReportService : IReportService
             .Include(so => so.ServiceTasks)
                 .ThenInclude(st => st.UsedParts)
                     .ThenInclude(up => up.Part)
-            .Select(so => new ClientRepairReportViewModel.RepairItem
+            .Select(so => new ClientRepairReportDto.RepairItem
             {
                 ServiceOrderId = so.Id,
                 OrderDate = so.OrderDate,
@@ -59,7 +60,7 @@ public class ReportService : IReportService
             .ToListAsync();
 
         // 5. Zbudowanie finalnego ViewModelu
-        var report = new ClientRepairReportViewModel
+        var report = new ClientRepairReportDto
         {
             ClientFullName = $"{vehicle.Client.FirstName} {vehicle.Client.LastName}",
             VehicleIdentifier = $"{vehicle.Vin} - {vehicle.RegistrationNumber}",
@@ -95,4 +96,44 @@ public class ReportService : IReportService
             .OrderBy(r => r.ClientFullName)
             .ToListAsync();
     }
+    
+    public async Task<List<CurrentServiceOrderReportItemDto>> GenerateCurrentServiceOrdersReportAsync()
+    {
+        // Słownik według username lub email, zależnie czym jest MechanicId
+        var mechanics = await _context.Workers
+            .AsNoTracking()
+            .ToDictionaryAsync(w => w.username, w => w.firstName + " " + w.lastName); // lub w.email
+
+        var orders = await _context.ServiceOrders
+            .AsNoTracking()
+            .Where(so => so.Status == ServiceOrderStatus.Nowe || so.Status == ServiceOrderStatus.WTrakcie)
+            .Include(so => so.Vehicle).ThenInclude(v => v.Client)
+            .Select(so => new
+            {
+                so.Id,
+                so.OrderDate,
+                so.MechanicId,
+                so.Status,
+                VehicleVin = so.Vehicle.Vin,
+                VehicleReg = so.Vehicle.RegistrationNumber,
+                ClientName = so.Vehicle.Client.FirstName + " " + so.Vehicle.Client.LastName
+            })
+            .ToListAsync();
+
+        var result = orders.Select(so => new CurrentServiceOrderReportItemDto
+        {
+            OrderId = so.Id,
+            OrderDate = so.OrderDate,
+            MechanicFullName = mechanics.TryGetValue(so.MechanicId ?? "", out var name) ? name : "Nieznany",
+            VehicleIdentifier = $"{so.VehicleVin} - {so.VehicleReg}",
+            ClientFullName = so.ClientName,
+            Status = so.Status.ToString()
+        }).OrderByDescending(r => r.OrderDate).ToList();
+
+        return result;
+    }
+
+
+
+
 }

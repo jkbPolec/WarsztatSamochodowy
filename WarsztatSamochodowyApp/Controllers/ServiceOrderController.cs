@@ -40,10 +40,13 @@ public class ServiceOrderController : Controller
 
             // Uzupełnij pole MechanicName ręcznie
             foreach (var order in serviceOrders)
-                if (order.MechanicId != null && mechanicsDict.ContainsKey(order.MechanicId))
-                    order.MechanicName = mechanicsDict[order.MechanicId];
+            {
+                if (!string.IsNullOrEmpty(order.MechanicId) && mechanicsDict.TryGetValue(order.MechanicId, out var name))
+                    order.MechanicName = name;
                 else
                     order.MechanicName = "Brak";
+            }
+
 
             ViewData["StatusFilter"] = new SelectList(Enum.GetValues(typeof(ServiceOrderStatus))
                 .Cast<ServiceOrderStatus>()
