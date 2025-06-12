@@ -9,34 +9,52 @@ namespace WarsztatSamochodowyApp.Controllers;
 public class ServiceOrderController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<ServiceOrderController> _logger;
 
-    public ServiceOrderController(ApplicationDbContext context)
+    public ServiceOrderController(ApplicationDbContext context, ILogger<ServiceOrderController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     // GET: ServiceOrder
     public async Task<IActionResult> Index()
     {
-        var serviceOrders = await _context.ServiceOrders.Include(v => v.Vehicle).ToListAsync();
-        return View(serviceOrders);
+        try
+        {
+            var serviceOrders = await _context.ServiceOrders.Include(v => v.Vehicle).ToListAsync();
+            return View(serviceOrders);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania listy zleceń serwisowych.");
+            return StatusCode(500, "Wystąpił błąd podczas pobierania zleceń.");
+        }
     }
 
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
-        var serviceOrder = await _context.ServiceOrders
-            .Include(o => o.Vehicle)
-            .Include(o => o.ServiceTasks)
+        try
+        {
+            var serviceOrder = await _context.ServiceOrders
+                .Include(o => o.Vehicle)
+                .Include(o => o.ServiceTasks)
                 .ThenInclude(st => st.UsedParts)
-                    .ThenInclude(up => up.Part)
-            .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
-            .FirstOrDefaultAsync(m => m.Id == id);
+                .ThenInclude(up => up.Part)
+                .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
+                .FirstOrDefaultAsync(m => m.Id == id);
 
-        if (serviceOrder == null) return NotFound();
+            if (serviceOrder == null) return NotFound();
 
-        return View(serviceOrder);
+            return View(serviceOrder);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania szczegółów zlecenia o ID {OrderId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas pobierania szczegółów zlecenia.");
+        }
     }
 
     [HttpPost]
@@ -45,15 +63,22 @@ public class ServiceOrderController : Controller
     {
         if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Details", new { id });
 
-        var comment = new Comment
+        try
         {
-            ServiceOrderId = id,
-            Content = content,
-            Author = User.Identity?.Name ?? "Anonim"
-        };
+            var comment = new Comment
+            {
+                ServiceOrderId = id,
+                Content = content,
+                Author = User.Identity?.Name ?? "Anonim"
+            };
 
-        _context.ServiceOrderComments.Add(comment);
-        await _context.SaveChangesAsync();
+            _context.ServiceOrderComments.Add(comment);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas dodawania komentarza do zlecenia o ID {OrderId}", id);
+        }
 
         return RedirectToAction("Details", new { id });
     }
@@ -61,32 +86,10 @@ public class ServiceOrderController : Controller
     // GET: ServiceOrder/Create
     public async Task<IActionResult> Create()
     {
-        var vehicles = await _context.Vehicles.ToListAsync();
-        ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
-
-        var tasks = await _context.ServiceTasks
-            .Include(t => t.UsedParts)
-            .ThenInclude(up => up.Part)
-            .ToListAsync();
-
-        ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
-        {
-            Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.TotalCost:C}"
-        }).ToList();
-
-        return View();
-    }
-
-    // POST: ServiceOrder/Create
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ServiceOrder serviceOrder, List<int> SelectedTaskIds)
-    {
-        if (!ModelState.IsValid)
+        try
         {
             var vehicles = await _context.Vehicles.ToListAsync();
-            ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+            ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
 
             var tasks = await _context.ServiceTasks
                 .Include(t => t.UsedParts)
@@ -99,79 +102,120 @@ public class ServiceOrderController : Controller
                 Text = $"{t.Name} - {t.TotalCost:C}"
             }).ToList();
 
-            return View(serviceOrder);
+            return View();
         }
-
-        serviceOrder.OrderDate = DateTime.Now;
-        serviceOrder.Status = ServiceOrderStatus.Nowe;  // <-- ustawiamy automatycznie status na "Nowe"
-
-        var selectedTasks = await _context.ServiceTasks
-            .Where(t => SelectedTaskIds.Contains(t.Id))
-            .ToListAsync();
-
-        serviceOrder.ServiceTasks = selectedTasks;
-
-        _context.Add(serviceOrder);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Index));
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas przygotowywania formularza tworzenia zlecenia serwisowego.");
+            return StatusCode(500, "Wystąpił błąd podczas ładowania formularza.");
+        }
     }
 
-    // GET: ServiceOrder/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(ServiceOrder serviceOrder, List<int> SelectedTaskIds)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                var vehicles = await _context.Vehicles.ToListAsync();
+                ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+
+                var tasks = await _context.ServiceTasks
+                    .Include(t => t.UsedParts)
+                    .ThenInclude(up => up.Part)
+                    .ToListAsync();
+
+                ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
+                {
+                    Value = t.Id.ToString(),
+                    Text = $"{t.Name} - {t.TotalCost:C}"
+                }).ToList();
+
+                return View(serviceOrder);
+            }
+
+            serviceOrder.OrderDate = DateTime.Now;
+            serviceOrder.Status = ServiceOrderStatus.Nowe;
+
+            var selectedTasks = await _context.ServiceTasks
+                .Where(t => SelectedTaskIds.Contains(t.Id))
+                .ToListAsync();
+
+            serviceOrder.ServiceTasks = selectedTasks;
+
+            _context.Add(serviceOrder);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas tworzenia zlecenia serwisowego.");
+            return StatusCode(500, "Wystąpił błąd podczas zapisu zlecenia.");
+        }
+    }
+
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
 
-        var serviceOrder = await _context.ServiceOrders
-            .Include(o => o.ServiceTasks)
-            .FirstOrDefaultAsync(o => o.Id == id);
-
-        if (serviceOrder == null) return NotFound();
-
-        ViewData["VehicleId"] = new SelectList(_context.Vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
-
-        var allTasks = await _context.ServiceTasks
-            .Include(t => t.UsedParts)
-            .ThenInclude(up => up.Part)
-            .ToListAsync();
-
-        ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+        try
         {
-            Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.TotalCost:C}",
-            Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
-        }).ToList();
+            var serviceOrder = await _context.ServiceOrders
+                .Include(o => o.ServiceTasks)
+                .FirstOrDefaultAsync(o => o.Id == id);
 
-        return View(serviceOrder);
+            if (serviceOrder == null) return NotFound();
+
+            ViewData["VehicleId"] =
+                new SelectList(_context.Vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+
+            var allTasks = await _context.ServiceTasks
+                .Include(t => t.UsedParts)
+                .ThenInclude(up => up.Part)
+                .ToListAsync();
+
+            ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+            {
+                Value = t.Id.ToString(),
+                Text = $"{t.Name} - {t.TotalCost:C}",
+                Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
+            }).ToList();
+
+            return View(serviceOrder);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas przygotowywania edycji zlecenia o ID {OrderId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas edycji zlecenia.");
+        }
     }
 
-    // POST: ServiceOrder/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder, List<int> SelectedTaskIds)
     {
         if (id != serviceOrder.Id) return NotFound();
 
-        if (ModelState.IsValid)
+        try
         {
-            try
+            if (ModelState.IsValid)
             {
                 var existingOrder = await _context.ServiceOrders
                     .Include(o => o.ServiceTasks)
                     .FirstOrDefaultAsync(o => o.Id == id);
 
                 if (existingOrder == null) return NotFound();
-                
+
                 existingOrder.Status = serviceOrder.Status;
-                if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
-                {
-                    existingOrder.FinishedDate = DateTime.Now;
-                }
-                else if (serviceOrder.Status != ServiceOrderStatus.Zakonczone)
-                {
-                    existingOrder.FinishedDate = null;
-                }
                 existingOrder.VehicleId = serviceOrder.VehicleId;
+
+                if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
+                    existingOrder.FinishedDate = DateTime.Now;
+                else if (serviceOrder.Status != ServiceOrderStatus.Zakonczone)
+                    existingOrder.FinishedDate = null;
 
                 existingOrder.ServiceTasks.Clear();
 
@@ -179,21 +223,22 @@ public class ServiceOrderController : Controller
                     .Where(t => SelectedTaskIds.Contains(t.Id))
                     .ToListAsync();
 
-                foreach (var task in selectedTasks)
-                {
-                    existingOrder.ServiceTasks.Add(task);
-                }
+                foreach (var task in selectedTasks) existingOrder.ServiceTasks.Add(task);
 
                 await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ServiceOrderExists(serviceOrder.Id)) return NotFound();
-
-                throw;
-            }
-
-            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogError(ex, "Błąd współbieżności przy edycji zlecenia o ID {OrderId}", id);
+            if (!ServiceOrderExists(serviceOrder.Id)) return NotFound();
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas edycji zlecenia o ID {OrderId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas zapisu zmian.");
         }
 
         var vehicles = await _context.Vehicles.ToListAsync();
@@ -214,37 +259,52 @@ public class ServiceOrderController : Controller
         return View(serviceOrder);
     }
 
-    private bool ServiceOrderExists(int id)
-    {
-        return _context.ServiceOrders.Any(e => e.Id == id);
-    }
-
     // GET: ServiceOrder/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();
 
-        var serviceOrder = await _context.ServiceOrders
-            .Include(v => v.Vehicle)
-            .FirstOrDefaultAsync(m => m.Id == id);
-        if (serviceOrder == null) return NotFound();
+        try
+        {
+            var serviceOrder = await _context.ServiceOrders
+                .Include(v => v.Vehicle)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (serviceOrder == null) return NotFound();
 
-        return View(serviceOrder);
+            return View(serviceOrder);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas ładowania zlecenia do usunięcia o ID {OrderId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas ładowania zlecenia.");
+        }
     }
 
-    // POST: ServiceOrder/Delete/5
     [HttpPost]
     [ActionName("DeleteConfirmed")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var serviceOrder = await _context.ServiceOrders.FindAsync(id);
-        if (serviceOrder != null)
+        try
         {
-            _context.ServiceOrders.Remove(serviceOrder);
-            await _context.SaveChangesAsync();
-        }
+            var serviceOrder = await _context.ServiceOrders.FindAsync(id);
+            if (serviceOrder != null)
+            {
+                _context.ServiceOrders.Remove(serviceOrder);
+                await _context.SaveChangesAsync();
+            }
 
-        return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas usuwania zlecenia o ID {OrderId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas usuwania zlecenia.");
+        }
+    }
+
+    private bool ServiceOrderExists(int id)
+    {
+        return _context.ServiceOrders.Any(e => e.Id == id);
     }
 }

@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Part> Parts { get; set; }
     public DbSet<UsedPart> UsedParts { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
+
     public DbSet<Comment> Comments { get; set; }
     public DbSet<Comment> ServiceOrderComments { get; set; }
 

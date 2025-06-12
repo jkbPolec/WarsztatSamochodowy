@@ -9,17 +9,27 @@ namespace WarsztatSamochodowyApp.Controllers;
 public class VehicleController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly ILogger<VehicleController> _logger;
 
-    public VehicleController(ApplicationDbContext context)
+    public VehicleController(ApplicationDbContext context, ILogger<VehicleController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     // GET: Vehicle
     public async Task<IActionResult> Index()
     {
-        var vehicles = _context.Vehicles.Include(v => v.Client);
-        return View(await vehicles.ToListAsync());
+        try
+        {
+            var vehicles = _context.Vehicles.Include(v => v.Client);
+            return View(await vehicles.ToListAsync());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania listy pojazdów.");
+            return StatusCode(500, "Wystąpił błąd podczas pobierania pojazdów.");
+        }
     }
 
     // GET: Vehicle/Details/5
@@ -27,20 +37,36 @@ public class VehicleController : Controller
     {
         if (id == null) return NotFound();
 
-        var vehicle = await _context.Vehicles
-            .Include(v => v.Client)
-            .FirstOrDefaultAsync(m => m.Id == id);
-        if (vehicle == null) return NotFound();
+        try
+        {
+            var vehicle = await _context.Vehicles
+                .Include(v => v.Client)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (vehicle == null) return NotFound();
 
-        return View(vehicle);
+            return View(vehicle);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas pobierania szczegółów pojazdu o ID {VehicleId}", id);
+            return StatusCode(500, "Wystąpił błąd podczas pobierania szczegółów pojazdu.");
+        }
     }
 
     // GET: Vehicle/Create
     public IActionResult Create()
     {
-        // Poprawiamy listę wyboru na bardziej czytelną (np. LastName klienta)
-        ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName");
-        return View();
+        try
+        {
+            // Poprawiamy listę wyboru na bardziej czytelną (np. LastName klienta)
+            ViewData["ClientId"] = new SelectList(_context.Clients, "Id", "LastName");
+            return View();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Błąd podczas przygotowywania formularza tworzenia pojazdu.");
+            return StatusCode(500, "Wystąpił błąd podczas przygotowywania formularza.");
+        }
     }
 
     // POST: Vehicle/Create
@@ -49,28 +75,36 @@ public class VehicleController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Vehicle vehicle, IFormFile ImageFile)
     {
-        if (ImageFile != null && ImageFile.Length > 0)
+        try
         {
-            var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-            if (!Directory.Exists(uploads))
-                Directory.CreateDirectory(uploads);
-
-            var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
-            var filePath = Path.Combine(uploads, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            if (ImageFile != null && ImageFile.Length > 0)
             {
-                await ImageFile.CopyToAsync(stream);
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
+                var filePath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ImageFile.CopyToAsync(stream);
+                }
+
+                vehicle.ImageUrl = "/images/" + fileName; // zapisz ścieżkę do bazy
             }
 
-            vehicle.ImageUrl = "/images/" + fileName; // zapisz ścieżkę do bazy
+            if (ModelState.IsValid)
+            {
+                _context.Add(vehicle);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
         }
-
-        if (ModelState.IsValid)
+        catch (Exception ex)
         {
-            _context.Add(vehicle);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            _logger.LogError(ex, "Błąd podczas tworzenia pojazdu (NLog).");
+            return StatusCode(500, "Wystąpił błąd podczas tworzenia pojazdu.");
         }
 
         ViewData["ClientId"] = new SelectList(_context.Set<Client>(), "Id", "LastName", vehicle.ClientId);
@@ -110,8 +144,9 @@ public class VehicleController : Controller
                 _context.Update(vehicle);
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
+                _logger.LogError(ex, "Błąd współbieżności podczas edycji pojazdu o ID {VehicleId}", id);
                 if (!_context.Vehicles.Any(e => e.Id == id))
                     return NotFound();
                 throw;
@@ -147,7 +182,15 @@ public class VehicleController : Controller
         if (vehicle != null)
         {
             _context.Vehicles.Remove(vehicle);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Błąd podczas usuwania pojazdu o ID {VehicleId}", id);
+                throw;
+            }
         }
 
         return RedirectToAction(nameof(Index));
@@ -165,6 +208,8 @@ public class VehicleController : Controller
 
         _context.Vehicles.Add(vehicle);
         await _context.SaveChangesAsync();
+        _logger.LogInformation("Dodano pojazd na sztywno: VIN={Vin}, Rejestracja={RegNum}, KlientId={ClientId}",
+            vehicle.Vin, vehicle.RegistrationNumber, vehicle.ClientId);
 
         return Content("Pojazd dodany na sztywno!");
     }

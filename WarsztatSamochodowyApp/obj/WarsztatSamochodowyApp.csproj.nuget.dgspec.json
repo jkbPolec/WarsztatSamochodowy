@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\xszym\\RiderProjects\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj": {}
+    "C:\\Users\\kubap\\Desktop\\NET\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\xszym\\RiderProjects\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj": {
+    "C:\\Users\\kubap\\Desktop\\NET\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\xszym\\RiderProjects\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj",
+        "projectUniqueName": "C:\\Users\\kubap\\Desktop\\NET\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj",
         "projectName": "WarsztatSamochodowyApp",
-        "projectPath": "C:\\Users\\xszym\\RiderProjects\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj",
-        "packagesPath": "C:\\Users\\xszym\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\xszym\\RiderProjects\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\obj\\",
+        "projectPath": "C:\\Users\\kubap\\Desktop\\NET\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\WarsztatSamochodowyApp.csproj",
+        "packagesPath": "C:\\Users\\kubap\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\kubap\\Desktop\\NET\\WarsztatSamochodowy\\WarsztatSamochodowyApp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\xszym\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\kubap\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,6 +26,7 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -44,12 +45,16 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Bogus": {
+              "target": "Package",
+              "version": "[35.6.3, )"
+            },
             "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.0.5, )"
@@ -90,6 +95,14 @@
               "target": "Package",
               "version": "[9.0.0, )"
             },
+            "NLog.Extensions.Logging": {
+              "target": "Package",
+              "version": "[5.5.0, )"
+            },
+            "NLog.Web.AspNetCore": {
+              "target": "Package",
+              "version": "[5.5.0, )"
+            },
             "Riok.Mapperly": {
               "target": "Package",
               "version": "[4.2.1, )"
@@ -118,7 +131,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Users\\xszym\\.dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
