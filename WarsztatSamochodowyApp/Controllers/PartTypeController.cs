@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
-using WarsztatSamochodowyApp.Models;
+using WarsztatSamochodowyApp.DTO;
+using WarsztatSamochodowyApp.Mappers;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
@@ -11,10 +12,12 @@ public class PartTypeController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<PartTypeController> _logger;
+    private readonly PartMapper _mapper;
 
-    public PartTypeController(ApplicationDbContext context, ILogger<PartTypeController> logger)
+    public PartTypeController(ApplicationDbContext context, PartMapper mapper, ILogger<PartTypeController> logger)
     {
         _context = context;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -23,7 +26,9 @@ public class PartTypeController : Controller
     {
         try
         {
-            return View(await _context.PartTypes.ToListAsync());
+            var entities = await _context.PartTypes.ToListAsync();
+            var dtos = entities.Select(_mapper.ToDto).ToList();
+            return View(dtos);
         }
         catch (Exception ex)
         {
@@ -35,15 +40,15 @@ public class PartTypeController : Controller
     // GET: PartType/Details/5
     public async Task<IActionResult> Details(int? id)
     {
+        if (id == null) return NotFound();
+
         try
         {
-            if (id == null) return NotFound();
+            var entity = await _context.PartTypes.FirstOrDefaultAsync(p => p.Id == id);
+            if (entity == null) return NotFound();
 
-            var partType = await _context.PartTypes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (partType == null) return NotFound();
-
-            return View(partType);
+            var dto = _mapper.ToDto(entity);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -57,7 +62,7 @@ public class PartTypeController : Controller
     {
         try
         {
-            return View();
+            return View(new PartTypeDto());
         }
         catch (Exception ex)
         {
@@ -67,33 +72,34 @@ public class PartTypeController : Controller
     }
 
     // POST: PartType/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Name")] PartType partType)
+    public async Task<IActionResult> Create(PartTypeDto dto)
     {
         if (ModelState.IsValid)
         {
-            _context.Add(partType);
+            var entity = _mapper.ToEntity(dto);
+            _context.Add(entity);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         _logger.LogWarning("Nieprawidłowy model podczas tworzenia PartType");
-        return View(partType);
+        return View(dto);
     }
 
     // GET: PartType/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
+        if (id == null) return NotFound();
+
         try
         {
-            if (id == null) return NotFound();
+            var entity = await _context.PartTypes.FindAsync(id);
+            if (entity == null) return NotFound();
 
-            var partType = await _context.PartTypes.FindAsync(id);
-            if (partType == null) return NotFound();
-            return View(partType);
+            var dto = _mapper.ToDto(entity);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -103,55 +109,49 @@ public class PartTypeController : Controller
     }
 
     // POST: PartType/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,Name")] PartType partType)
+    public async Task<IActionResult> Edit(int id, PartTypeDto dto)
     {
-        if (id != partType.Id) return NotFound();
+        if (id != dto.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
-            try
+            var entity = await _context.PartTypes.FindAsync(id);
+            if (entity == null)
             {
-                _context.Update(partType);
-                await _context.SaveChangesAsync();
+                _logger.LogWarning("Nie znaleziono PartType o Id={PartTypeId} podczas edycji.", id);
+                return NotFound();
             }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogError(ex,
-                    "Błąd współbieżności podczas edycji PartType o Id={PartTypeId}", partType.Id);
-                if (!PartTypeExists(partType.Id)) return NotFound();
 
-                throw;
-            }
+            _mapper.UpdateEntity(dto, entity);
+
+            _context.Update(entity);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        _logger.LogWarning("Nieprawidłowy model podczas edycji PartType o Id={PartTypeId}",
-            partType.Id);
-        return View(partType);
+        _logger.LogWarning("Nieprawidłowy model podczas edycji PartType o Id={PartTypeId}", dto.Id);
+        return View(dto);
     }
 
     // GET: PartType/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
+        if (id == null) return NotFound();
+
         try
         {
-            if (id == null) return NotFound();
+            var entity = await _context.PartTypes.FirstOrDefaultAsync(p => p.Id == id);
+            if (entity == null) return NotFound();
 
-            var partType = await _context.PartTypes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (partType == null) return NotFound();
-
-            return View(partType);
+            var dto = _mapper.ToDto(entity);
+            return View(dto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Błąd podczas pobierania PartType do usunięcia o Id={PartTypeId}", id);
+            _logger.LogError(ex, "Błąd podczas pobierania PartType do usunięcia o Id={PartTypeId}", id);
             return StatusCode(500, "Wystąpił błąd podczas pobierania danych.");
         }
     }
@@ -162,28 +162,16 @@ public class PartTypeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var partType = await _context.PartTypes.FindAsync(id);
-        if (partType == null)
-            _logger.LogWarning("Próba usunięcia nieistniejącego PartType o Id={PartTypeId}",
-                id);
-        else
-            _context.PartTypes.Remove(partType);
+        var entity = await _context.PartTypes.FindAsync(id);
+        if (entity == null)
+        {
+            _logger.LogWarning("Próba usunięcia nieistniejącego PartType o Id={PartTypeId}", id);
+            return RedirectToAction(nameof(Index));
+        }
 
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas usuwania PartType o Id={PartTypeId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas usuwania danych.");
-        }
+        _context.PartTypes.Remove(entity);
+        await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
-    }
-
-    private bool PartTypeExists(int id)
-    {
-        return _context.PartTypes.Any(e => e.Id == id);
     }
 }
