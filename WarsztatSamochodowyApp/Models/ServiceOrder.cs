@@ -20,6 +20,7 @@ public class ServiceOrder
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
 
-    //public int WorkerId { get; set; }
-    //public Worker Worker { get; set; } = null!;
+    public string? MechanicId { get; set; } // FK do AppUser (nullable, jak nieprzypisane)
+
+    [ValidateNever] public string? MechanicName { get; set; } // do wyświetlania, opcjonalne
 }
