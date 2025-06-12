@@ -30,6 +30,7 @@
         <th>Data</th>
         <th>Status</th>
         <th>Pojazd</th>
+        <th>Mechanik</th>
         <th>Akcje</th>
     </tr>
     </thead>
@@ -40,6 +41,7 @@
             <td>@item.OrderDate.ToShortDateString()</td>
             <td>@item.Status</td>
             <td>@item.Vehicle?.RegistrationNumber</td>
+            <td>@item.MechanicName</td>
             <td>
                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Szczegóły</a>
                 <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edytuj</a>

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
@@ -10,11 +11,14 @@ public class ServiceOrderController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ServiceOrderController> _logger;
+    private readonly UserManager<AppUser> _userManager;
 
-    public ServiceOrderController(ApplicationDbContext context, ILogger<ServiceOrderController> logger)
+    public ServiceOrderController(ApplicationDbContext context, ILogger<ServiceOrderController> logger,
+        UserManager<AppUser> userManager)
     {
         _context = context;
         _logger = logger;
+        _userManager = userManager;
     }
 
     // GET: ServiceOrder
@@ -24,14 +28,28 @@ public class ServiceOrderController : Controller
         {
             var query = _context.ServiceOrders.Include(v => v.Vehicle).AsQueryable();
 
-            if (statusFilter.HasValue) query = query.Where(o => o.Status == statusFilter.Value);
+            if (statusFilter.HasValue)
+                query = query.Where(o => o.Status == statusFilter.Value);
 
             var serviceOrders = await query.ToListAsync();
 
-            // Do widoku przekaż też listę statusów do dropdowna
+            // Wyciągnij mechaników z UserManager
+            var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
+            var mechanicsDict = mechanics.ToDictionary(m => m.Id, m => m.Email); // lub imię, jeśli masz
+
+            // Uzupełnij pole MechanicName ręcznie
+            foreach (var order in serviceOrders)
+                if (order.MechanicId != null && mechanicsDict.ContainsKey(order.MechanicId))
+                    order.MechanicName = mechanicsDict[order.MechanicId];
+                else
+                    order.MechanicName = "Brak";
+
             ViewData["StatusFilter"] = new SelectList(Enum.GetValues(typeof(ServiceOrderStatus))
                 .Cast<ServiceOrderStatus>()
                 .Select(s => new { Value = s, Text = s.ToString() }), "Value", "Text", statusFilter);
+
+            // Przekaż mechaników do widoku przez ViewBag
+
 
             return View(serviceOrders);
         }
@@ -58,6 +76,12 @@ public class ServiceOrderController : Controller
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (serviceOrder == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(serviceOrder.MechanicId))
+            {
+                var mechanik = await _userManager.FindByIdAsync(serviceOrder.MechanicId);
+                serviceOrder.MechanicName = mechanik?.UserName; // albo UserName, jak wolisz
+            }
 
             return View(serviceOrder);
         }
@@ -102,6 +126,9 @@ public class ServiceOrderController : Controller
             var vehicles = await _context.Vehicles.ToListAsync();
             ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
 
+            var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
+            ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email");
+
             var tasks = await _context.ServiceTasks
                 .Include(t => t.UsedParts)
                 .ThenInclude(up => up.Part)
@@ -143,6 +170,9 @@ public class ServiceOrderController : Controller
                     Value = t.Id.ToString(),
                     Text = $"{t.Name} - {t.TotalCost:C}"
                 }).ToList();
+
+                var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
+                ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", serviceOrder.MechanicId);
 
                 return View(serviceOrder);
             }
@@ -195,6 +225,9 @@ public class ServiceOrderController : Controller
                 Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
             }).ToList();
 
+            var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
+            ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", serviceOrder.MechanicId);
+
             return View(serviceOrder);
         }
         catch (Exception ex)
@@ -222,6 +255,7 @@ public class ServiceOrderController : Controller
 
                 existingOrder.Status = serviceOrder.Status;
                 existingOrder.VehicleId = serviceOrder.VehicleId;
+                existingOrder.MechanicId = serviceOrder.MechanicId;
 
                 if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
                     existingOrder.FinishedDate = DateTime.Now;
@@ -281,6 +315,12 @@ public class ServiceOrderController : Controller
                 .Include(v => v.Vehicle)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (serviceOrder == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(serviceOrder.MechanicId))
+            {
+                var mechanik = await _userManager.FindByIdAsync(serviceOrder.MechanicId);
+                serviceOrder.MechanicName = mechanik?.UserName; // albo UserName, jak wolisz
+            }
 
             return View(serviceOrder);
         }
