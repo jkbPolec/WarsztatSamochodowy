@@ -42,7 +42,14 @@ public class ReportsController : Controller
     public async Task<IActionResult> ClientRepairs()
     {
         // Przygotuj dane dla dropdowna z klientami
-        ViewBag.Clients = new SelectList(await _context.Clients.ToListAsync(), "Id", "LastName");
+        // Przekazanie wygenerowanego raportu do tego samego widoku
+        ViewBag.Clients = _context.Clients
+            .Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = $"[{c.Id}] {c.LastName} {c.FirstName}"
+            })
+            .ToList();
         return View();
     }
     
@@ -78,7 +85,13 @@ public class ReportsController : Controller
         }
         
         // Przekazanie wygenerowanego raportu do tego samego widoku
-        ViewBag.Clients = new SelectList(await _context.Clients.ToListAsync(), "Id", "LastName");
+        ViewBag.Clients = _context.Clients
+            .Select(c => new SelectListItem
+            {
+                Value = c.Id.ToString(),
+                Text = $"[{c.Id}] {c.LastName} {c.FirstName}"
+            })
+            .ToList();
         ViewBag.ReportData = report;
 
 
