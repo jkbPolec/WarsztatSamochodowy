@@ -8,5 +8,4 @@ public class Comment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int ServiceOrderId { get; set; }
-    public ServiceOrder ServiceOrder { get; set; } = null!;
 }
