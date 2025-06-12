@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,8 @@ public static class Program
                 .WithSingletonLifetime());
 
             // Dodanie ról i polityk autoryzacji
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<IAuthorizationHandler, AssignedMechanicHandler>();
             builder.Services.AddAuthorization(options => { options.AddCustomAuthorizationPolicies(); });
 
 

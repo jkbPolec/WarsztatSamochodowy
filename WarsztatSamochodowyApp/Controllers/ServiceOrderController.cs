@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -198,6 +199,7 @@ public class ServiceOrderController : Controller
         }
     }
 
+    [Authorize(Policy = "OnlyAssignedMechanic")]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
