@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
-using WarsztatSamochodowyApp.Models;
+using WarsztatSamochodowyApp.DTO;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
@@ -9,10 +9,12 @@ public class ClientController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ClientController> _logger;
+    private readonly ClientMapper _mapper;
 
-    public ClientController(ApplicationDbContext context, ILogger<ClientController> logger)
+    public ClientController(ApplicationDbContext context, ClientMapper mapper, ILogger<ClientController> logger)
     {
         _context = context;
+        _mapper = mapper;
         _logger = logger;
     }
 
@@ -21,7 +23,9 @@ public class ClientController : Controller
     {
         try
         {
-            return View(await _context.Clients.ToListAsync());
+            var clients = await _context.Clients.ToListAsync();
+            var dtos = clients.Select(c => _mapper.ToDto(c)).ToList();
+            return View(dtos);
         }
         catch (Exception ex)
         {
@@ -37,11 +41,11 @@ public class ClientController : Controller
 
         try
         {
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var client = await _context.Clients.FindAsync(id);
             if (client == null) return NotFound();
 
-            return View(client);
+            var dto = _mapper.ToDto(client);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -53,22 +57,21 @@ public class ClientController : Controller
     // GET: Client/Create
     public IActionResult Create()
     {
-        return View();
+        return View(new ClientDto());
     }
 
     // POST: Client/Create
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,FirstName,LastName,Email,PhoneNumber")] Client client)
+    public async Task<IActionResult> Create(ClientDto dto)
     {
         if (ModelState.IsValid)
-        {
             try
             {
+                var client = _mapper.ToEntity(dto);
                 _context.Add(client);
                 await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
@@ -76,10 +79,10 @@ public class ClientController : Controller
                 return StatusCode(500, "Wystąpił błąd podczas zapisywania danych.");
             }
 
-            return RedirectToAction(nameof(Index));
-        }
+        foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+            _logger.LogError("Błąd walidacji podczas tworzenia klienta: {ErrorMessage}", error.ErrorMessage);
 
-        return View(client);
+        return View(dto);
     }
 
     // GET: Client/Edit/5
@@ -91,7 +94,9 @@ public class ClientController : Controller
         {
             var client = await _context.Clients.FindAsync(id);
             if (client == null) return NotFound();
-            return View(client);
+
+            var dto = _mapper.ToDto(client);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -101,33 +106,26 @@ public class ClientController : Controller
     }
 
     // POST: Client/Edit/5
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,FirstName,LastName,Email,PhoneNumber")] Client client)
+    public async Task<IActionResult> Edit(int id, ClientDto dto)
     {
-        if (id != client.Id) return NotFound();
+        if (id != dto.Id) return NotFound();
 
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(client);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogError(ex, "Błąd współbieżności podczas edycji klienta o Id={ClientId}", client.Id);
-                if (!ClientExists(client.Id)) return NotFound();
+            var client = await _context.Clients.FindAsync(id);
+            if (client == null) return NotFound();
 
-                throw;
-            }
+            _mapper.UpdateEntity(dto, client);
+
+            _context.Update(client);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
-        return View(client);
+        return View(dto);
     }
 
     // GET: Client/Delete/5
@@ -137,11 +135,11 @@ public class ClientController : Controller
 
         try
         {
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var client = await _context.Clients.FindAsync(id);
             if (client == null) return NotFound();
 
-            return View(client);
+            var dto = _mapper.ToDto(client);
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -156,23 +154,18 @@ public class ClientController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        try
+        var client = await _context.Clients.FindAsync(id);
+        if (client != null)
         {
-            var client = await _context.Clients.FindAsync(id);
-            if (client != null)
-            {
-                _context.Clients.Remove(client);
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Index));
+            _context.Clients.Remove(client);
+            _logger.LogInformation("Usunięto klienta o Id={ClientId}", id);
         }
-        catch (Exception ex)
+        else
         {
-            _logger.LogError(ex, "Błąd podczas usuwania klienta o Id={ClientId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas usuwania klienta.");
+            _logger.LogWarning("Nie znaleziono klienta do usunięcia o Id={ClientId}", id);
         }
 
+        await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 
