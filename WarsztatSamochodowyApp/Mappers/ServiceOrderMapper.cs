@@ -1,6 +1,4 @@
-﻿// Mappers/ServiceOrderMapper.cs
-
-using WarsztatSamochodowyApp.DTO;
+﻿using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Mappers;
@@ -11,7 +9,6 @@ public class ServiceOrderMapper
     private readonly ServiceTaskMapper _serviceTaskMapper;
     private readonly VehicleMapper _vehicleMapper;
 
-    // Wstrzykujemy wszystkie potrzebne mappery
     public ServiceOrderMapper(VehicleMapper vehicleMapper, ServiceTaskMapper serviceTaskMapper,
         CommentMapper commentMapper)
     {

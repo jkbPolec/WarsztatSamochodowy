@@ -19,13 +19,13 @@ public class ServiceOrderController : Controller
     private readonly ApplicationDbContext _context;
 
     private readonly ILogger<ServiceOrderController> _logger;
-    private readonly ServicesMapper _mapper;
+    private readonly ServiceOrderMapper _mapper;
 
     private readonly UserManager<AppUser> _userManager;
     private readonly VehicleMapper _vehicleMapper;
 
     public ServiceOrderController(ApplicationDbContext context, ILogger<ServiceOrderController> logger,
-        UserManager<AppUser> userManager, ServicesMapper mapper, VehicleMapper vehicleMapper)
+        UserManager<AppUser> userManager, ServiceOrderMapper mapper, VehicleMapper vehicleMapper)
     {
         _context = context;
         _logger = logger;
