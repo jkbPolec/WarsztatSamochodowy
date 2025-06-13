@@ -1,5 +1,7 @@
-﻿using QuestPDF.Fluent;
+﻿using Microsoft.AspNetCore.Identity;
+using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
+using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Services.Reports;
 
@@ -17,12 +19,27 @@ public class OpenOrderReportBackgroundService : BackgroundService
     private readonly ILogger<OpenOrderReportBackgroundService> _logger;
     private readonly IConfiguration _configuration;
 
-    public OpenOrderReportBackgroundService(IServiceProvider serviceProvider, ILogger<OpenOrderReportBackgroundService> logger, IConfiguration configuration)
+    public OpenOrderReportBackgroundService(
+        IServiceProvider serviceProvider,
+        ILogger<OpenOrderReportBackgroundService> logger,
+        IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _configuration = configuration;
     }
+
+ 
+    private async Task<List<string>> GetAdminEmailsAsync(IServiceScope scope)
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var users = await userManager.GetUsersInRoleAsync("Admin");
+        return users
+            .Select(u => u.Email)
+            .Where(email => !string.IsNullOrEmpty(email))
+            .ToList();
+    }
+
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -35,10 +52,8 @@ public class OpenOrderReportBackgroundService : BackgroundService
 
                 var reportData = await reportService.GenerateCurrentServiceOrdersReportAsync();
 
-                string pdfPath = "open_orders.pdf";
-                GeneratePdf(reportData, pdfPath);
-
-                await SendEmailWithAttachmentAsync(pdfPath);
+                var pdfBytes = GeneratePdf(reportData);
+                await SendEmailWithAttachmentAsync(pdfBytes, scope);
 
                 _logger.LogInformation("Raport został wysłany: {Time}", DateTime.Now);
             }
@@ -47,15 +62,15 @@ public class OpenOrderReportBackgroundService : BackgroundService
                 _logger.LogError(ex, "Błąd podczas generowania lub wysyłania raportu.");
             }
 
-            await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken); // zmień na 24h po testach
+            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken); // zmień później na 24h
         }
     }
 
-    private void GeneratePdf(List<CurrentServiceOrderReportItemDto> data, string outputPath)
+    private byte[] GeneratePdf(List<CurrentServiceOrderReportItemDto> data)
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
-        using var stream = File.Create(outputPath);
+        using var stream = new MemoryStream();
 
         Document.Create(container =>
         {
@@ -73,13 +88,22 @@ public class OpenOrderReportBackgroundService : BackgroundService
                     });
             });
         }).GeneratePdf(stream);
+
+        return stream.ToArray(); // zwraca zawartość jako tablicę bajtów
     }
 
 
 
-    private async Task SendEmailWithAttachmentAsync(string filePath)
+
+    private async Task SendEmailWithAttachmentAsync(byte[] pdfBytes, IServiceScope scope)
     {
-        var adminEmail = _configuration["adminEmail"] ?? "admin@example.com";
+        var adminEmails = await GetAdminEmailsAsync(scope);
+        if (!adminEmails.Any())
+        {
+            _logger.LogWarning("Brak zarejestrowanych administratorów do wysłania raportu.");
+            return;
+        }
+
         var smtpSection = _configuration.GetSection("Smtp");
 
         var message = new MailMessage
@@ -90,8 +114,13 @@ public class OpenOrderReportBackgroundService : BackgroundService
             IsBodyHtml = false
         };
 
-        message.To.Add(adminEmail);
-        message.Attachments.Add(new Attachment(filePath));
+        foreach (var email in adminEmails)
+        {
+            message.To.Add(email);
+        }
+
+        var attachment = new Attachment(new MemoryStream(pdfBytes), "open_orders.pdf", "application/pdf");
+        message.Attachments.Add(attachment);
 
         using var client = new SmtpClient(smtpSection["Host"])
         {
@@ -102,4 +131,7 @@ public class OpenOrderReportBackgroundService : BackgroundService
 
         await client.SendMailAsync(message);
     }
+
+
+
 }

@@ -196,6 +196,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcSGVhZGVyXEFkbWluUGFuZWxCdXR0b24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/xszym/RiderProjects/WarsztatSamochodowy2/WarsztatSamochodowyApp/Views/Shared/Components/Header/ClientsButton.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcSGVhZGVyXENsaWVudHNCdXR0b24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/xszym/RiderProjects/WarsztatSamochodowy2/WarsztatSamochodowyApp/Views/Shared/Components/Header/PartsButtons.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcSGVhZGVyXFBhcnRzQnV0dG9ucy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
