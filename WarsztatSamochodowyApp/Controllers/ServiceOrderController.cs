@@ -8,10 +8,6 @@ using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
 
-// Upewnij się, że masz using do mapperów
-
-// Upewnij się, że masz using do DTO
-
 namespace WarsztatSamochodowyApp.Controllers;
 
 public class ServiceOrderController : Controller
@@ -34,8 +30,6 @@ public class ServiceOrderController : Controller
         _vehicleMapper = vehicleMapper;
     }
 
-    // --- Metody GET (Index, Details, Create, Edit, Delete) - wydają się w porządku, zostawiam bez większych zmian ---
-    // (Poniżej wklejam je dla kompletności, ale kluczowe zmiany są w POST)
 
     public async Task<IActionResult> Index(ServiceOrderStatus? statusFilter)
     {
@@ -77,7 +71,6 @@ public class ServiceOrderController : Controller
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
-        // ... Twoja obecna logika jest OK
         var serviceOrder = await _context.ServiceOrders
             .Include(o => o.Vehicle)
             .Include(o => o.ServiceTasks)
@@ -100,7 +93,6 @@ public class ServiceOrderController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddComment(int id, string content)
     {
-        // Twoja obecna logika jest OK
         if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Details", new { id });
         var comment = new Comment { ServiceOrderId = id, Content = content, Author = User.Identity?.Name ?? "Anonim" };
         _context.ServiceOrderComments.Add(comment);
@@ -115,19 +107,15 @@ public class ServiceOrderController : Controller
         return View(new ServiceOrderDto());
     }
 
-    // =================================================================
-    // POPRAWIONA METODA CREATE (POST)
-    // =================================================================
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceOrderDto dto) // <-- KLUCZOWA ZMIANA: tylko DTO jako parametr
     {
         try
         {
-            // `SelectedTaskIds` jest teraz właściwością `dto`
             if (ModelState.IsValid)
             {
-                // Tworzymy nową encję i mapujemy do niej dane z DTO
                 var newOrder = new ServiceOrder
                 {
                     OrderDate = DateTime.Now,
@@ -156,7 +144,6 @@ public class ServiceOrderController : Controller
             ModelState.AddModelError("", "Wystąpił nieoczekiwany błąd podczas zapisu zlecenia. Spróbuj ponownie.");
         }
 
-        // Jeśli model jest niepoprawny lub wystąpił błąd, przygotuj widok ponownie
         await PrepareViewDataForCreateAndEdit(dto);
         return View(dto);
     }
@@ -179,9 +166,7 @@ public class ServiceOrderController : Controller
         return View(dto);
     }
 
-    // =================================================================
-    // POPRAWIONA METODA EDIT (POST)
-    // =================================================================
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ServiceOrderDto dto) // <-- KLUCZOWA ZMIANA: tylko DTO jako parametr
@@ -280,26 +265,18 @@ public class ServiceOrderController : Controller
         return _context.ServiceOrders.Any(e => e.Id == id);
     }
 
-    // Prywatna metoda pomocnicza do wypełniania ViewBag/ViewData, aby uniknąć powtórzeń
     private async Task PrepareViewDataForCreateAndEdit(ServiceOrderDto dto)
     {
         var vehicles = await _context.Vehicles.ToListAsync();
-        // ZMIANA 1: Pracujemy bezpośrednio na liście encji 'vehicles'.
-        // Konstruktor SelectList potrafi sam pobrać właściwości "Id" i "RegistrationNumber" z obiektów Vehicle.
-        // Nie ma potrzeby tworzyć listy DTO tylko dla tego celu.
         ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", dto.VehicleId);
 
         var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
         ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", dto.MechanicId);
 
         var allTasks = await _context.ServiceTasks.ToListAsync();
-        // ZMIANA 2: Używamy LINQ .Select() do transformacji listy encji 'allTasks' na listę SelectListItem.
-        // Dla każdego zadania 't' w liście 'allTasks' tworzymy nowy SelectListItem.
-        // To eliminuje potrzebę posiadania metody ToDtoList.
         ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
         {
             Value = t.Id.ToString(),
-            // Użyłem 'TotalCost' jak w oryginalnym kodzie, jeśli w encji pole nazywa się inaczej (np. Price), zmień je tutaj.
             Text = $"{t.Name} - {t.TotalCost:C}",
             Selected = dto.SelectedTaskIds.Contains(t.Id)
         }).ToList();

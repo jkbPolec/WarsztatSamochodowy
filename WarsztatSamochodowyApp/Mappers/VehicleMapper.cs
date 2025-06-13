@@ -31,7 +31,7 @@ public partial class VehicleMapper
             RegistrationNumber = dto.RegistrationNumber,
             ImageUrl = dto.ImageUrl,
             ClientId = dto.ClientId,
-            Client = null // bo nie masz danych na temat Clienta z DTO
+            Client = null
         };
     }
 }

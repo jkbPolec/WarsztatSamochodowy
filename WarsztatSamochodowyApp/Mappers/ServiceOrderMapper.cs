@@ -31,12 +31,11 @@ public class ServiceOrderMapper
             MechanicId = order.MechanicId,
             MechanicName = order.MechanicName,
 
-            // Reużywamy wstrzykniętych mapperów
+
             Vehicle = order.Vehicle != null ? _vehicleMapper.ToDto(order.Vehicle) : null,
             ServiceTasks = _serviceTaskMapper.ToDtoList(order.ServiceTasks),
             Comments = order.Comments?.Select(_commentMapper.ToDto).ToList() ?? new List<CommentDto>(),
 
-            // Kluczowe dla formularza edycji
             SelectedTaskIds = order.ServiceTasks?.Select(t => t.Id).ToList() ?? new List<int>()
         };
     }
@@ -46,7 +45,7 @@ public class ServiceOrderMapper
         return orders?.Select(ToDto).ToList() ?? new List<ServiceOrderDto>();
     }
 
-    // Ta metoda jest bardzo prosta - tworzy tylko szkielet do zapisu
+
     public ServiceOrder ToEntity(ServiceOrderDto dto)
     {
         if (dto == null) return null;

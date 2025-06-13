@@ -1,44 +1,49 @@
 @model WarsztatSamochodowyApp.DTO.VehicleDto
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Szczegóły Pojazdu";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Details</h1>
+<h1>Szczegóły Pojazdu</h1>
 
 <div>
-    <h4>Vehicle</h4>
-    <hr/>
+    <h4>Dane</h4>
+    <hr class="border-secondary"/>
     <dl class="row">
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.Vin)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.Vin)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.RegistrationNumber)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.RegistrationNumber)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.ClientFullName)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.ClientFullName)
         </dd>
-        <dt class="col-sm-2">
-            Zdjencie
-        </dt>
-        <dd class="col-sm-10">
-            <img src="@Model.ImageUrl" alt="Zdjęcie pojazdu" style="max-width:300px;"/>
-        </dd>
-
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <dt class="col-sm-3 col-md-2">
+                Zdjęcie
+            </dt>
+            <dd class="col-sm-9 col-md-10">
+                <img src="@Model.ImageUrl" alt="Zdjęcie pojazdu" class="img-fluid rounded shadow"
+                     style="max-height: 300px;"/>
+            </dd>
+        }
     </dl>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-warning">Edytuj</a>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Powrót do listy
+    </a>
 </div>

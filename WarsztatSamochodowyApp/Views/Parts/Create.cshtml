@@ -1,51 +1,46 @@
 @model WarsztatSamochodowyApp.DTO.PartDto
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Dodaj Część";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Create</h1>
+<h1>Dodaj nową część</h1>
 
-<h4>Part</h4>
-<hr/>
+<h4>Wprowadź dane</h4>
+<hr class="border-secondary"/>
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <div class="form-group mb-3">
                 <label asp-for="Name" class="control-label"></label>
                 <input asp-for="Name" class="form-control"/>
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Price" class="control-label"></label>
-                <input asp-for="Price" class="form-control"/>
+                <input asp-for="Price" class="form-control" type="number" step="0.01"/>
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="PartTypeId" class="control-label"></label>
-                <select asp-for="PartTypeId" class="form-control" asp-items="ViewBag.PartTypeId"></select>
+            <div class="form-group mb-3">
+                <label asp-for="PartTypeId" class="control-label">Typ części</label>
+                <select asp-for="PartTypeId" class="form-control" asp-items="ViewBag.PartTypeId">
+                    <option value="">-- Wybierz typ --</option>
+                </select>
+                <span asp-validation-for="PartTypeId" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary"/>
+            <div class="form-group mt-4">
+                <input type="submit" value="Zapisz" class="btn btn-primary"/>
             </div>
         </form>
     </div>
 </div>
 
-<div class="text-danger">
-    @foreach (var state in ViewData.ModelState.Values)
-    {
-        foreach (var error in state.Errors)
-        {
-            <div>@error.ErrorMessage</div>
-        }
-    }
-</div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Powrót do listy
+    </a>
 </div>
 
 @section Scripts {

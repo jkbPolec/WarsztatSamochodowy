@@ -1,6 +1,4 @@
-﻿// DTO/PartDto.cs
-
-using WarsztatSamochodowyApp.Models;
+﻿using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.DTO;
 

@@ -91,7 +91,7 @@ public class AdminController : Controller
         }
 
         user.Email = model.Email;
-        user.UserName = model.Email; // Albo inny logiczny update username
+        user.UserName = model.Email;
 
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)

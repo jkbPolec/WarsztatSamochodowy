@@ -1,7 +1,4 @@
-﻿// W pliku DTO/ServiceTaskDto.cs
-
-
-namespace WarsztatSamochodowyApp.DTO;
+﻿namespace WarsztatSamochodowyApp.DTO;
 
 public class ServiceTaskDto
 {

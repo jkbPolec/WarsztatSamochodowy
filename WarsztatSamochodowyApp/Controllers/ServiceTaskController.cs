@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
 using WarsztatSamochodowyApp.DTO;
-using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
@@ -13,7 +12,6 @@ public class ServiceTaskController : Controller
 
     private readonly ILogger<ServiceTaskController> _logger;
 
-    // ZMIANA: Wstrzykujemy nowy, dedykowany mapper
     private readonly ServiceTaskMapper _mapper;
 
     public ServiceTaskController(ApplicationDbContext context, ILogger<ServiceTaskController> logger,
@@ -24,8 +22,6 @@ public class ServiceTaskController : Controller
         _mapper = mapper;
     }
 
-    // Metody Index, Details, Delete (GET), DeleteConfirmed - zostają takie same,
-    // ale będą teraz używać nowego, poprawnego mappera.
 
     public async Task<IActionResult> Index()
     {
@@ -51,7 +47,6 @@ public class ServiceTaskController : Controller
         return View(new ServiceTaskDto());
     }
 
-    // ZMIANA: Logika tworzenia pozostaje w kontrolerze
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceTaskDto dto, List<int> partIds, List<int> quantities)
@@ -102,7 +97,6 @@ public class ServiceTaskController : Controller
         return View(_mapper.ToDto(serviceTask));
     }
 
-    // ZMIANA: Logika aktualizacji pozostaje w kontrolerze
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ServiceTaskDto dto, List<int> partIds, List<int> quantities)
@@ -122,10 +116,8 @@ public class ServiceTaskController : Controller
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (existingTask == null) return NotFound();
 
-            // Używamy mappera tylko do prostych pól
             _mapper.UpdateEntityFromDto(dto, existingTask);
 
-            // Logika aktualizacji relacji zostaje w kontrolerze
             existingTask.UsedParts.Clear();
             if (partIds != null && quantities != null && partIds.Count == quantities.Count)
             {
@@ -148,7 +140,6 @@ public class ServiceTaskController : Controller
         }
     }
 
-    // Delete i DeleteConfirmed bez zmian.
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null) return NotFound();

@@ -3,23 +3,57 @@
 
 @{
     Layout = "_Layout";
+    ViewData["Title"] = "Edycja Użytkownika";
 }
 
-<h2>Edytuj użytkownika</h2>
+<h1><i class="bi bi-person-gear me-2"></i>Edytuj użytkownika</h1>
+<hr class="border-secondary mb-4"/>
 
-<form method="post">
-    <input type="hidden" asp-for="Id"/>
-    <label>Email:</label>
-    <input asp-for="Email"/>
+<div class="row">
+    <div class="col-md-8">
+        <form method="post">
+            <input type="hidden" asp-for="Id"/>
 
-    <h3>Role</h3>
-    @foreach (IdentityRole role in ViewBag.AllRoles)
-    {
-        <input type="checkbox" name="selectedRoles" value="@role.Name"
-               @(Model.Roles.Contains(role.Name) ? "checked" : "")/>
-        @role.Name
-        <br/>
-    }
+            <div class="mb-3">
+                <label class="form-label">Email (Login)</label>
+                <input asp-for="Email" class="form-control" readonly/>
+                <div class="form-text">Emaila użytkownika nie można zmienić.</div>
+            </div>
 
-    <button type="submit">Zapisz</button>
-</form>
+            <h3 class="mt-4">Przypisane role</h3>
+            <div class="list-group">
+                @foreach (IdentityRole role in ViewBag.AllRoles)
+                {
+                    <label class="list-group-item list-group-item-dark d-flex align-items-center">
+                        <div class="form-check form-switch flex-grow-1">
+                            <input type="checkbox" class="form-check-input" name="selectedRoles" value="@role.Name"
+                                   @(Model.Roles.Contains(role.Name) ? "checked" : "") role="switch"/>
+                            <span class="ms-2">
+                                @switch (role.Name)
+                                {
+                                    case "Admin":
+                                        <i class="bi bi-shield-lock-fill text-danger me-2"></i>
+                                        break;
+                                    case "Mechanik":
+                                        <i class="bi bi-tools text-info me-2"></i>
+                                        break;
+                                    default:
+                                        <i class="bi bi-person-fill text-secondary me-2"></i>
+                                        break;
+                                }
+                                @role.Name
+                            </span>
+                        </div>
+                    </label>
+                }
+            </div>
+
+            <div class="form-group mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill me-2"></i>Zapisz zmiany
+                </button>
+                <a asp-action="Users" class="btn btn-outline-secondary">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>

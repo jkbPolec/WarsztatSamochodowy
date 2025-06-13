@@ -1,43 +1,45 @@
 @model WarsztatSamochodowyApp.DTO.ClientDto
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Szczegóły klienta";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Details</h1>
+<h1>Szczegóły klienta</h1>
 
 <div>
-    <h4>Client</h4>
-    <hr/>
+    <h4>Dane</h4>
+    <hr class="border-secondary"/>
     <dl class="row">
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.FirstName)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.FirstName)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.LastName)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.LastName)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.Email)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.Email)
         </dd>
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.PhoneNumber)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.PhoneNumber)
         </dd>
     </dl>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-warning">Edytuj</a>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Powrót do listy
+    </a>
 </div>

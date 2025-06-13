@@ -1,6 +1,4 @@
-﻿// Mappers/ServiceTaskMapper.cs
-
-using WarsztatSamochodowyApp.DTO;
+﻿using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
 
@@ -21,9 +19,6 @@ public class ServiceTaskMapper
             Id = task.Id,
             Name = task.Name,
             Description = task.Description,
-            // ==========================================================
-            // KLUCZOWA ZMIANA: Mapuj encja.Price na dto.Price
-            // ==========================================================
             Price = task.Price,
             UsedParts = task.UsedParts?.Select(up => new UsedPartDto
             {
@@ -34,7 +29,6 @@ public class ServiceTaskMapper
         };
     }
 
-    // Reszta mappera bez zmian (ToDtoList i UpdateEntityFromDto są już poprawne)
     public List<ServiceTaskDto> ToDtoList(IEnumerable<ServiceTask> tasks)
     {
         return tasks?.Select(ToDto).ToList() ?? new List<ServiceTaskDto>();

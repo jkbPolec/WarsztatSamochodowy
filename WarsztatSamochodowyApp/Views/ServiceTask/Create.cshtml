@@ -1,59 +1,75 @@
 @model WarsztatSamochodowyApp.DTO.ServiceTaskDto
 
 @{
-    ViewData["Title"] = "Create Service Task";
+    ViewData["Title"] = "Dodaj Zadanie Serwisowe";
     var allParts = ViewBag.AllParts as List<Part>;
 }
 
-<h2>Create Service Task</h2>
+<h1>Dodaj nowe zadanie serwisowe</h1>
 
-<form asp-action="Create" method="post">
-    <div class="form-group">
-        <label asp-for="Name"></label>
-        <input asp-for="Name" class="form-control"/>
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Price"></label>
-        <input asp-for="Price" type="number" step="0.01" class="form-control"/>
-        <span asp-validation-for="Price" class="text-danger"></span>
-    </div>
+<h4>Wprowadź dane</h4>
+<hr class="border-secondary"/>
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+            <div class="form-group mb-3">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control"/>
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label"></label>
+                <textarea asp-for="Description" class="form-control"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Price" class="control-label">Cena usługi (bez części)</label>
+                <input asp-for="Price" type="number" step="0.01" class="form-control"/>
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
 
-    <h4>Used Parts</h4>
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>Part Name</th>
-            <th>Price</th>
-            <th>Quantity</th>
-        </tr>
-        </thead>
-        <tbody>
-        @if (allParts != null)
-        {
-            for (var i = 0; i < allParts.Count; i++)
-            {
-                <tr>
-                    <td>@allParts[i].Name</td>
-                    <td>@allParts[i].Price zł</td>
-                    <td>
-                        <input type="hidden" name="partIds" value="@allParts[i].Id"/>
-                        <input type="number" name="quantities" min="0" value="0" class="form-control"/>
-                    </td>
-                </tr>
-            }
-        }
-        </tbody>
-    </table>
+            <h4 class="mt-4">Użyte części</h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-bordered align-middle">
+                    <thead>
+                    <tr>
+                        <th>Nazwa części</th>
+                        <th>Cena jednostkowa</th>
+                        <th style="width: 150px;">Ilość</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (allParts != null)
+                    {
+                        for (var i = 0; i < allParts.Count; i++)
+                        {
+                            <tr>
+                                <td>@allParts[i].Name</td>
+                                <td>@allParts[i].Price.ToString("C")</td>
+                                <td>
+                                    <input type="hidden" name="partIds" value="@allParts[i].Id"/>
+                                    <input type="number" name="quantities" min="0" value="0" class="form-control"/>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            </div>
 
-    <button type="submit" class="btn btn-primary">Create</button>
-    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-</form>
+            <div class="form-group mt-4">
+                <input type="submit" value="Zapisz" class="btn btn-primary"/>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Powrót do listy
+    </a>
+</div>
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
