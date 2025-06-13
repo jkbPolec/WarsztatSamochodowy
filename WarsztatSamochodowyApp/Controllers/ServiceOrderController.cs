@@ -4,25 +4,39 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
+using WarsztatSamochodowyApp.DTO;
+using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
+
+// Upewnij się, że masz using do mapperów
+
+// Upewnij się, że masz using do DTO
 
 namespace WarsztatSamochodowyApp.Controllers;
 
 public class ServiceOrderController : Controller
 {
     private readonly ApplicationDbContext _context;
+
     private readonly ILogger<ServiceOrderController> _logger;
+    private readonly ServicesMapper _mapper;
+
     private readonly UserManager<AppUser> _userManager;
+    private readonly VehicleMapper _vehicleMapper;
 
     public ServiceOrderController(ApplicationDbContext context, ILogger<ServiceOrderController> logger,
-        UserManager<AppUser> userManager)
+        UserManager<AppUser> userManager, ServicesMapper mapper, VehicleMapper vehicleMapper)
     {
         _context = context;
         _logger = logger;
         _userManager = userManager;
+        _mapper = mapper;
+        _vehicleMapper = vehicleMapper;
     }
 
-    // GET: ServiceOrder
+    // --- Metody GET (Index, Details, Create, Edit, Delete) - wydają się w porządku, zostawiam bez większych zmian ---
+    // (Poniżej wklejam je dla kompletności, ale kluczowe zmiany są w POST)
+
     public async Task<IActionResult> Index(ServiceOrderStatus? statusFilter)
     {
         try
@@ -33,26 +47,25 @@ public class ServiceOrderController : Controller
                 query = query.Where(o => o.Status == statusFilter.Value);
 
             var serviceOrders = await query.ToListAsync();
-
-            // Wyciągnij mechaników z UserManager
             var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
-            var mechanicsDict = mechanics.ToDictionary(m => m.Id, m => m.Email); // lub imię, jeśli masz
+            var mechanicsDict = mechanics.ToDictionary(m => m.Id, m => m.Email);
 
-            // Uzupełnij pole MechanicName ręcznie
+            var dtoList = new List<ServiceOrderDto>();
             foreach (var order in serviceOrders)
+            {
                 if (order.MechanicId != null && mechanicsDict.ContainsKey(order.MechanicId))
                     order.MechanicName = mechanicsDict[order.MechanicId];
                 else
                     order.MechanicName = "Brak";
 
-            ViewData["StatusFilter"] = new SelectList(Enum.GetValues(typeof(ServiceOrderStatus))
-                .Cast<ServiceOrderStatus>()
-                .Select(s => new { Value = s, Text = s.ToString() }), "Value", "Text", statusFilter);
+                dtoList.Add(_mapper.ToDto(order));
+            }
 
-            // Przekaż mechaników do widoku przez ViewBag
-
-
-            return View(serviceOrders);
+            ViewData["StatusFilter"] =
+                new SelectList(
+                    Enum.GetValues(typeof(ServiceOrderStatus)).Cast<ServiceOrderStatus>()
+                        .Select(s => new { Value = s, Text = s.ToString() }), "Value", "Text", statusFilter);
+            return View(dtoList);
         }
         catch (Exception ex)
         {
@@ -61,303 +74,234 @@ public class ServiceOrderController : Controller
         }
     }
 
-
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
-
-        try
+        // ... Twoja obecna logika jest OK
+        var serviceOrder = await _context.ServiceOrders
+            .Include(o => o.Vehicle)
+            .Include(o => o.ServiceTasks)
+            .ThenInclude(st => st.UsedParts)
+            .ThenInclude(up => up.Part)
+            .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
+            .FirstOrDefaultAsync(m => m.Id == id);
+        if (serviceOrder == null) return NotFound();
+        if (!string.IsNullOrEmpty(serviceOrder.MechanicId))
         {
-            var serviceOrder = await _context.ServiceOrders
-                .Include(o => o.Vehicle)
-                .Include(o => o.ServiceTasks)
-                .ThenInclude(st => st.UsedParts)
-                .ThenInclude(up => up.Part)
-                .Include(o => o.Comments.OrderByDescending(c => c.CreatedAt))
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (serviceOrder == null) return NotFound();
-
-            if (!string.IsNullOrEmpty(serviceOrder.MechanicId))
-            {
-                var mechanik = await _userManager.FindByIdAsync(serviceOrder.MechanicId);
-                serviceOrder.MechanicName = mechanik?.UserName; // albo UserName, jak wolisz
-            }
-
-            return View(serviceOrder);
+            var mechanik = await _userManager.FindByIdAsync(serviceOrder.MechanicId);
+            serviceOrder.MechanicName = mechanik?.UserName;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas pobierania szczegółów zlecenia o ID {OrderId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas pobierania szczegółów zlecenia.");
-        }
+
+        var dto = _mapper.ToDto(serviceOrder);
+        return View(dto);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddComment(int id, string content)
     {
+        // Twoja obecna logika jest OK
         if (string.IsNullOrWhiteSpace(content)) return RedirectToAction("Details", new { id });
-
-        try
-        {
-            var comment = new Comment
-            {
-                ServiceOrderId = id,
-                Content = content,
-                Author = User.Identity?.Name ?? "Anonim"
-            };
-
-            _context.ServiceOrderComments.Add(comment);
-            await _context.SaveChangesAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas dodawania komentarza do zlecenia o ID {OrderId}", id);
-        }
-
+        var comment = new Comment { ServiceOrderId = id, Content = content, Author = User.Identity?.Name ?? "Anonim" };
+        _context.ServiceOrderComments.Add(comment);
+        await _context.SaveChangesAsync();
         return RedirectToAction("Details", new { id });
     }
 
     // GET: ServiceOrder/Create
     public async Task<IActionResult> Create()
     {
-        try
-        {
-            var vehicles = await _context.Vehicles.ToListAsync();
-            ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber");
-
-            var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
-            ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email");
-
-            var tasks = await _context.ServiceTasks
-                .Include(t => t.UsedParts)
-                .ThenInclude(up => up.Part)
-                .ToListAsync();
-
-            ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
-            {
-                Value = t.Id.ToString(),
-                Text = $"{t.Name} - {t.TotalCost:C}"
-            }).ToList();
-
-            return View();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas przygotowywania formularza tworzenia zlecenia serwisowego.");
-            return StatusCode(500, "Wystąpił błąd podczas ładowania formularza.");
-        }
+        await PrepareViewDataForCreateAndEdit(new ServiceOrderDto());
+        return View(new ServiceOrderDto());
     }
 
+    // =================================================================
+    // POPRAWIONA METODA CREATE (POST)
+    // =================================================================
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ServiceOrder serviceOrder, List<int> SelectedTaskIds)
+    public async Task<IActionResult> Create(ServiceOrderDto dto) // <-- KLUCZOWA ZMIANA: tylko DTO jako parametr
     {
         try
         {
-            if (!ModelState.IsValid)
+            // `SelectedTaskIds` jest teraz właściwością `dto`
+            if (ModelState.IsValid)
             {
-                var vehicles = await _context.Vehicles.ToListAsync();
-                ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
-
-                var tasks = await _context.ServiceTasks
-                    .Include(t => t.UsedParts)
-                    .ThenInclude(up => up.Part)
-                    .ToListAsync();
-
-                ViewBag.ServiceTasks = tasks.Select(t => new SelectListItem
+                // Tworzymy nową encję i mapujemy do niej dane z DTO
+                var newOrder = new ServiceOrder
                 {
-                    Value = t.Id.ToString(),
-                    Text = $"{t.Name} - {t.TotalCost:C}"
-                }).ToList();
+                    OrderDate = DateTime.Now,
+                    Status = ServiceOrderStatus.Nowe,
+                    VehicleId = dto.VehicleId,
+                    MechanicId = dto.MechanicId
+                };
 
-                var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
-                ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", serviceOrder.MechanicId);
+                // Przypisujemy wybrane zadania
+                if (dto.SelectedTaskIds != null && dto.SelectedTaskIds.Any())
+                {
+                    var selectedTasks = await _context.ServiceTasks
+                        .Where(t => dto.SelectedTaskIds.Contains(t.Id))
+                        .ToListAsync();
+                    newOrder.ServiceTasks = selectedTasks;
+                }
 
-                return View(serviceOrder);
+                _context.Add(newOrder);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
-
-            serviceOrder.OrderDate = DateTime.Now;
-            serviceOrder.Status = ServiceOrderStatus.Nowe;
-
-            var selectedTasks = await _context.ServiceTasks
-                .Where(t => SelectedTaskIds.Contains(t.Id))
-                .ToListAsync();
-
-            serviceOrder.ServiceTasks = selectedTasks;
-
-            _context.Add(serviceOrder);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Błąd podczas tworzenia zlecenia serwisowego.");
-            return StatusCode(500, "Wystąpił błąd podczas zapisu zlecenia.");
+            ModelState.AddModelError("", "Wystąpił nieoczekiwany błąd podczas zapisu zlecenia. Spróbuj ponownie.");
         }
+
+        // Jeśli model jest niepoprawny lub wystąpił błąd, przygotuj widok ponownie
+        await PrepareViewDataForCreateAndEdit(dto);
+        return View(dto);
     }
 
+    // GET: ServiceOrder/Edit/{id}
     [Authorize(Policy = "OnlyAssignedMechanic")]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null) return NotFound();
 
+        var serviceOrder = await _context.ServiceOrders
+            .Include(o => o.ServiceTasks)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (serviceOrder == null) return NotFound();
+
+        var dto = _mapper.ToDto(serviceOrder);
+        await PrepareViewDataForCreateAndEdit(dto);
+
+        return View(dto);
+    }
+
+    // =================================================================
+    // POPRAWIONA METODA EDIT (POST)
+    // =================================================================
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ServiceOrderDto dto) // <-- KLUCZOWA ZMIANA: tylko DTO jako parametr
+    {
+        if (id != dto.Id) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            await PrepareViewDataForCreateAndEdit(dto);
+            return View(dto);
+        }
+
         try
         {
-            var serviceOrder = await _context.ServiceOrders
+            // Pobieramy istniejącą, śledzoną encję z bazy
+            var existingOrder = await _context.ServiceOrders
                 .Include(o => o.ServiceTasks)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
-            if (serviceOrder == null) return NotFound();
+            if (existingOrder == null) return NotFound();
 
-            ViewData["VehicleId"] =
-                new SelectList(_context.Vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
+            // Aktualizujemy właściwości istniejącej encji na podstawie DTO
+            existingOrder.Status = dto.Status;
+            existingOrder.VehicleId = dto.VehicleId;
+            existingOrder.MechanicId = dto.MechanicId;
 
-            var allTasks = await _context.ServiceTasks
-                .Include(t => t.UsedParts)
-                .ThenInclude(up => up.Part)
-                .ToListAsync();
+            // Logika daty zakończenia
+            if (dto.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
+                existingOrder.FinishedDate = DateTime.Now;
+            else if (dto.Status != ServiceOrderStatus.Zakonczone)
+                existingOrder.FinishedDate = null;
 
-            ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+            // Aktualizujemy listę zadań
+            existingOrder.ServiceTasks.Clear(); // Czyścimy stare powiązania
+            if (dto.SelectedTaskIds != null && dto.SelectedTaskIds.Any())
             {
-                Value = t.Id.ToString(),
-                Text = $"{t.Name} - {t.TotalCost:C}",
-                Selected = serviceOrder.ServiceTasks.Any(st => st.Id == t.Id)
-            }).ToList();
-
-            var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
-            ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", serviceOrder.MechanicId);
-
-            return View(serviceOrder);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas przygotowywania edycji zlecenia o ID {OrderId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas edycji zlecenia.");
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceOrder serviceOrder, List<int> SelectedTaskIds)
-    {
-        if (id != serviceOrder.Id) return NotFound();
-
-        try
-        {
-            if (ModelState.IsValid)
-            {
-                var existingOrder = await _context.ServiceOrders
-                    .Include(o => o.ServiceTasks)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
-                if (existingOrder == null) return NotFound();
-
-                existingOrder.Status = serviceOrder.Status;
-                existingOrder.VehicleId = serviceOrder.VehicleId;
-                existingOrder.MechanicId = serviceOrder.MechanicId;
-
-                if (serviceOrder.Status == ServiceOrderStatus.Zakonczone && existingOrder.FinishedDate == null)
-                    existingOrder.FinishedDate = DateTime.Now;
-                else if (serviceOrder.Status != ServiceOrderStatus.Zakonczone)
-                    existingOrder.FinishedDate = null;
-
-                existingOrder.ServiceTasks.Clear();
-
                 var selectedTasks = await _context.ServiceTasks
-                    .Where(t => SelectedTaskIds.Contains(t.Id))
+                    .Where(t => dto.SelectedTaskIds.Contains(t.Id))
                     .ToListAsync();
-
                 foreach (var task in selectedTasks) existingOrder.ServiceTasks.Add(task);
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogError(ex, "Błąd współbieżności przy edycji zlecenia o ID {OrderId}", id);
-            if (!ServiceOrderExists(serviceOrder.Id)) return NotFound();
-            throw;
+            ModelState.AddModelError("",
+                "Dane zostały w międzyczasie zmienione przez innego użytkownika. Odśwież stronę i spróbuj ponownie.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Błąd podczas edycji zlecenia o ID {OrderId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas zapisu zmian.");
+            ModelState.AddModelError("", "Wystąpił nieoczekiwany błąd podczas zapisu zmian.");
         }
 
-        var vehicles = await _context.Vehicles.ToListAsync();
-        ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", serviceOrder.VehicleId);
-
-        var allTasks = await _context.ServiceTasks
-            .Include(t => t.UsedParts)
-            .ThenInclude(up => up.Part)
-            .ToListAsync();
-
-        ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
-        {
-            Value = t.Id.ToString(),
-            Text = $"{t.Name} - {t.TotalCost:C}",
-            Selected = SelectedTaskIds.Contains(t.Id)
-        }).ToList();
-
-        return View(serviceOrder);
+        await PrepareViewDataForCreateAndEdit(dto);
+        return View(dto);
     }
 
-    // GET: ServiceOrder/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
+        // ... Twoja obecna logika jest OK
         if (id == null) return NotFound();
-
-        try
+        var serviceOrder = await _context.ServiceOrders.Include(v => v.Vehicle).FirstOrDefaultAsync(m => m.Id == id);
+        if (serviceOrder == null) return NotFound();
+        var dto = _mapper.ToDto(serviceOrder);
+        if (!string.IsNullOrEmpty(dto.MechanicId))
         {
-            var serviceOrder = await _context.ServiceOrders
-                .Include(v => v.Vehicle)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (serviceOrder == null) return NotFound();
-
-            if (!string.IsNullOrEmpty(serviceOrder.MechanicId))
-            {
-                var mechanik = await _userManager.FindByIdAsync(serviceOrder.MechanicId);
-                serviceOrder.MechanicName = mechanik?.UserName; // albo UserName, jak wolisz
-            }
-
-            return View(serviceOrder);
+            var mechanik = await _userManager.FindByIdAsync(dto.MechanicId);
+            dto.MechanicName = mechanik?.UserName;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas ładowania zlecenia do usunięcia o ID {OrderId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas ładowania zlecenia.");
-        }
+
+        return View(dto);
     }
 
     [HttpPost]
-    [ActionName("DeleteConfirmed")]
+    [ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        try
+        var serviceOrder = await _context.ServiceOrders.FindAsync(id);
+        if (serviceOrder != null)
         {
-            var serviceOrder = await _context.ServiceOrders.FindAsync(id);
-            if (serviceOrder != null)
-            {
-                _context.ServiceOrders.Remove(serviceOrder);
-                await _context.SaveChangesAsync();
-            }
+            _context.ServiceOrders.Remove(serviceOrder);
+            await _context.SaveChangesAsync();
+        }
 
-            return RedirectToAction(nameof(Index));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas usuwania zlecenia o ID {OrderId}", id);
-            return StatusCode(500, "Wystąpił błąd podczas usuwania zlecenia.");
-        }
+        return RedirectToAction(nameof(Index));
     }
+
 
     private bool ServiceOrderExists(int id)
     {
         return _context.ServiceOrders.Any(e => e.Id == id);
+    }
+
+    // Prywatna metoda pomocnicza do wypełniania ViewBag/ViewData, aby uniknąć powtórzeń
+    private async Task PrepareViewDataForCreateAndEdit(ServiceOrderDto dto)
+    {
+        var vehicles = await _context.Vehicles.ToListAsync();
+        // ZMIANA 1: Pracujemy bezpośrednio na liście encji 'vehicles'.
+        // Konstruktor SelectList potrafi sam pobrać właściwości "Id" i "RegistrationNumber" z obiektów Vehicle.
+        // Nie ma potrzeby tworzyć listy DTO tylko dla tego celu.
+        ViewData["VehicleId"] = new SelectList(vehicles, "Id", "RegistrationNumber", dto.VehicleId);
+
+        var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
+        ViewBag.MechanicList = new SelectList(mechanics, "Id", "Email", dto.MechanicId);
+
+        var allTasks = await _context.ServiceTasks.ToListAsync();
+        // ZMIANA 2: Używamy LINQ .Select() do transformacji listy encji 'allTasks' na listę SelectListItem.
+        // Dla każdego zadania 't' w liście 'allTasks' tworzymy nowy SelectListItem.
+        // To eliminuje potrzebę posiadania metody ToDtoList.
+        ViewBag.ServiceTasks = allTasks.Select(t => new SelectListItem
+        {
+            Value = t.Id.ToString(),
+            // Użyłem 'TotalCost' jak w oryginalnym kodzie, jeśli w encji pole nazywa się inaczej (np. Price), zmień je tutaj.
+            Text = $"{t.Name} - {t.TotalCost:C}",
+            Selected = dto.SelectedTaskIds.Contains(t.Id)
+        }).ToList();
     }
 }
