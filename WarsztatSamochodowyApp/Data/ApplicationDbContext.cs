@@ -25,6 +25,13 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        // Konfiguracja indeksów dla tabeli ServiceOrders
+        modelBuilder.Entity<ServiceOrder>(entity =>
+        {
+            // Indeks dla kolumny Status
+            entity.HasIndex(e => e.Status, "IX_ServiceOrders_Status");
+        });
+
         modelBuilder.Entity<ServiceOrder>()
             .Property(e => e.Status)
             .HasConversion<string>(); // Konwersja enum <-> string

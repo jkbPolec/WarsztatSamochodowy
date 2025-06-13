@@ -1,25 +1,27 @@
 @model WarsztatSamochodowyApp.DTO.PartTypeDto
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Szczegóły Typu Części";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Details</h1>
+<h1>Szczegóły Typu Części</h1>
 
 <div>
-    <h4>PartType</h4>
-    <hr/>
+    <h4>Dane</h4>
+    <hr class="border-secondary"/>
     <dl class="row">
-        <dt class="col-sm-2">
+        <dt class="col-sm-3 col-md-2">
             @Html.DisplayNameFor(model => model.Name)
         </dt>
-        <dd class="col-sm-10">
+        <dd class="col-sm-9 col-md-10">
             @Html.DisplayFor(model => model.Name)
         </dd>
     </dl>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<div class="mt-4">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-warning">Edytuj</a>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Powrót do listy
+    </a>
 </div>

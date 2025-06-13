@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ServiceOrder>
+﻿@model IEnumerable<WarsztatSamochodowyApp.DTO.ServiceOrderDto>
 
 @{
     ViewData["Title"] = "Lista zleceń serwisowych";
@@ -24,7 +24,7 @@
     <a asp-action="Create" class="btn btn-primary">Dodaj nowe zlecenie</a>
 </p>
 
-<table class="table table-striped">
+<table class="table table-dark table-striped table-hover align-middle">
     <thead>
     <tr>
         <th>Data</th>
@@ -39,7 +39,16 @@
     {
         <tr>
             <td>@item.OrderDate.ToShortDateString()</td>
-            <td>@item.Status</td>
+            <td>
+                <span class="badge rounded-pill fs-6 @(
+                                                     item.Status == ServiceOrderStatus.Nowe ? "bg-info" :
+                                                     item.Status == ServiceOrderStatus.WTrakcie ? "bg-warning text-dark" :
+                                                     item.Status == ServiceOrderStatus.Zakonczone ? "bg-success" :
+                                                     item.Status == ServiceOrderStatus.Anulowane ? "bg-danger" : "bg-secondary"
+                                                     )">
+                    @item.Status
+                </span>
+            </td>
             <td>@item.Vehicle?.RegistrationNumber</td>
             <td>@item.MechanicName</td>
             <td>

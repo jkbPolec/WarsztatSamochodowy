@@ -1,26 +1,29 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
-using WarsztatSamochodowyApp.Services; // Zastąp poprawną przestrzenią nazw
-using WarsztatSamochodowyApp.Services.Reports;
 using WarsztatSamochodowyApp.Services.Pdf;
+using WarsztatSamochodowyApp.Services.Reports;
+// Zastąp poprawną przestrzenią nazw
 
 namespace WarsztatSamochodowyApp.Controllers;
 
+[Authorize(Policy = "ServiceTaskPolicy")]
 public class ReportsController : Controller
 {
-    private readonly IReportService _reportService;
     private readonly ApplicationDbContext _context; // Do pobrania listy klientów i pojazdów
     private readonly MonthlyRepairPdfExporter _pdfExporter;
-    
-    public ReportsController(IReportService reportService, ApplicationDbContext context, MonthlyRepairPdfExporter pdfExporter)
+    private readonly IReportService _reportService;
+
+    public ReportsController(IReportService reportService, ApplicationDbContext context,
+        MonthlyRepairPdfExporter pdfExporter)
     {
         _reportService = reportService;
         _context = context;
         _pdfExporter = pdfExporter;
     }
-    
+
     public async Task<byte[]> GenerateMonthlySummaryPdfAsync(int year, int month)
     {
         var data = await _reportService.GenerateMonthlySummaryAsync(year, month);
@@ -31,12 +34,14 @@ public class ReportsController : Controller
 
         return _pdfExporter.Generate(year, month, data);
     }
+
     // GET: /Reports/Index
     [HttpGet]
     public IActionResult Index()
     {
         return View();
     }
+
     // GET: /Reports/ClientRepairs
     [HttpGet]
     public async Task<IActionResult> ClientRepairs()
@@ -52,7 +57,7 @@ public class ReportsController : Controller
             .ToList();
         return View();
     }
-    
+
     // Akcja do dynamicznego pobierania pojazdów klienta (opcjonalnie, dla lepszego UX)
     [HttpGet]
     public async Task<JsonResult> GetVehiclesForClient(int clientId)
@@ -79,11 +84,8 @@ public class ReportsController : Controller
 
         var report = await _reportService.GenerateClientRepairsReportAsync(clientId, vehicleId, year, month);
 
-        if (report == null)
-        {
-            return NotFound("Nie znaleziono pojazdu dla podanego klienta.");
-        }
-        
+        if (report == null) return NotFound("Nie znaleziono pojazdu dla podanego klienta.");
+
         // Przekazanie wygenerowanego raportu do tego samego widoku
         ViewBag.Clients = _context.Clients
             .Select(c => new SelectListItem
@@ -97,14 +99,14 @@ public class ReportsController : Controller
 
         return View("ClientRepairs");
     }
-    
+
     // GET: /Reports/MonthlySummary
     [HttpGet]
     public IActionResult MonthlySummary()
     {
         return View();
     }
-    
+
     // POST: /Reports/MonthlySummary
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -123,5 +125,4 @@ public class ReportsController : Controller
 
         return File(pdfBytes, "application/pdf", $"Raport_{month:00}_{year}.pdf");
     }
-
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -6,12 +7,9 @@ using WarsztatSamochodowyApp.DTO;
 using WarsztatSamochodowyApp.Mappers;
 using WarsztatSamochodowyApp.Models;
 
-// dodaj namespace DTO
-// dodaj mapper manualny
-// using WarsztatSamochodowyApp.Mappers; // jeśli tam masz VehicleMapperManual
-
 namespace WarsztatSamochodowyApp.Controllers;
 
+[Authorize(Policy = "CarRegistrationPolicy")]
 public class VehicleController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -52,7 +50,7 @@ public class VehicleController : Controller
             if (vehicle == null) return NotFound();
 
             var dto = _mapper.ToDto(vehicle);
-            return View(dto); // przekazujemy DTO do widoku
+            return View(dto);
         }
         catch (Exception ex)
         {
@@ -83,28 +81,28 @@ public class VehicleController : Controller
     {
         try
         {
-            if (ImageFile != null && ImageFile.Length > 0)
-            {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-                if (!Directory.Exists(uploads))
-                    Directory.CreateDirectory(uploads);
-
-                var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
-                var filePath = Path.Combine(uploads, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await ImageFile.CopyToAsync(stream);
-                }
-
-                dto.ImageUrl = "/images/" + fileName;
-            }
-
             if (ModelState.IsValid)
             {
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ImageFile.CopyToAsync(stream);
+                    }
+
+                    dto.ImageUrl = "/images/" + fileName;
+                }
+
                 var vehicle = _mapper.FromDto(dto);
 
-                // Jeśli chcesz, możesz tu załadować Client z bazy i przypisać do pojazdu:
+
                 vehicle.Client = await _context.Clients.FindAsync(dto.ClientId);
 
                 _context.Add(vehicle);

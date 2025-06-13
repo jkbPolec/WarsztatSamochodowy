@@ -5,6 +5,36 @@
 
 <h1>Warsztat Samochodowy</h1>
 
+<!-- Karty ze statystykami -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-lg h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-gear-wide-connected display-3"></i>
+                <h1 class="card-title display-4 fw-bold">@ViewBag.ActiveOrdersCount</h1>
+                <p class="card-text fs-5">Aktywnych Zleceń</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow-lg h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-car-front-fill display-3"></i>
+                <h1 class="card-title display-4 fw-bold">@ViewBag.TotalVehiclesCount</h1>
+                <p class="card-text fs-5">Pojazdów w Bazie</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info shadow-lg h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill display-3"></i>
+                <h1 class="card-title display-4 fw-bold">@ViewBag.ClientsCount</h1>
+                <p class="card-text fs-5">Zarejestrowanych Klientów</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 

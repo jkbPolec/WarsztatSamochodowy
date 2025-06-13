@@ -8,32 +8,26 @@ namespace WarsztatSamochodowyApp.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ApplicationDbContext _context; // Wstrzyknij DbContext
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(ApplicationDbContext context, ILogger<HomeController> logger)
+    public HomeController(ILogger<HomeController> logger, ApplicationDbContext context)
     {
-        _context = context;
         _logger = logger;
+        _context = context;
     }
-
-    // public IActionResult Index()
-    // {
-    //     return View();
-    // }
 
     public async Task<IActionResult> Index()
     {
-        try
-        {
-            var clients = await _context.Clients.ToListAsync();
-            return View(clients);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Błąd podczas pobierania listy klientów.");
-            return RedirectToAction("Error");
-        }
+        // Pobieramy statystyki i przekazujemy je przez ViewBag
+        ViewBag.ActiveOrdersCount = await _context.ServiceOrders
+            .CountAsync(o => o.Status != ServiceOrderStatus.Zakonczone && o.Status != ServiceOrderStatus.Anulowane);
+
+        ViewBag.TotalVehiclesCount = await _context.Vehicles.CountAsync();
+
+        ViewBag.ClientsCount = await _context.Clients.CountAsync();
+
+        return View();
     }
 
     public IActionResult Privacy()
