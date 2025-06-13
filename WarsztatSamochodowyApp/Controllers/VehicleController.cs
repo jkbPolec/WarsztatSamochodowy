@@ -83,25 +83,25 @@ public class VehicleController : Controller
     {
         try
         {
-            if (ImageFile != null && ImageFile.Length > 0)
-            {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
-                if (!Directory.Exists(uploads))
-                    Directory.CreateDirectory(uploads);
-
-                var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
-                var filePath = Path.Combine(uploads, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await ImageFile.CopyToAsync(stream);
-                }
-
-                dto.ImageUrl = "/images/" + fileName;
-            }
-
             if (ModelState.IsValid)
             {
+                if (ImageFile != null && ImageFile.Length > 0)
+                {
+                    var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+                    if (!Directory.Exists(uploads))
+                        Directory.CreateDirectory(uploads);
+
+                    var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
+                    var filePath = Path.Combine(uploads, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await ImageFile.CopyToAsync(stream);
+                    }
+
+                    dto.ImageUrl = "/images/" + fileName;
+                }
+
                 var vehicle = _mapper.FromDto(dto);
 
                 // Jeśli chcesz, możesz tu załadować Client z bazy i przypisać do pojazdu:

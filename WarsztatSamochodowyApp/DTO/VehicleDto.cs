@@ -6,6 +6,6 @@ public class VehicleDto
     public string Vin { get; set; }
     public string RegistrationNumber { get; set; }
     public string? ImageUrl { get; set; }
-    public string ClientFullName { get; set; }
+    public string? ClientFullName { get; set; }
     public int ClientId { get; set; } // do create/edit
 }
