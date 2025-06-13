@@ -56,12 +56,13 @@ public static class Program
             builder.Services.AddIdentity<AppUser, IdentityRole>()
                 .AddEntityFrameworkStores<IdentityContext>()
                 .AddDefaultTokenProviders();
-
-        builder.Services.AddTransient<IEmailSender, DummyEmailSender>();
+            
 
         builder.Services.AddScoped<IReportService, ReportService>();
         
         builder.Services.AddTransient<MonthlyRepairPdfExporter>();
+        
+        builder.Services.AddHostedService<OpenOrderReportBackgroundService>();
 
         
         var app = builder.Build();

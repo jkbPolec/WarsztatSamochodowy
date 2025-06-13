@@ -1,6 +1,6 @@
 ﻿namespace WarsztatSamochodowyApp.DTO;
 
-public class ClientRepairReportViewModel
+public class ClientRepairReportDto
 {
     public string ClientFullName { get; set; }
     public string VehicleIdentifier { get; set; } // np. "VIN - Rejestracja"

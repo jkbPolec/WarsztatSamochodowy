@@ -148,6 +148,12 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
                     b.Property<DateTime?>("FinishedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("MechanicId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MechanicName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
@@ -290,13 +296,11 @@ namespace WarsztatSamochodowyApp.Migrations.ApplicationDb
 
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Comment", b =>
                 {
-                    b.HasOne("WarsztatSamochodowyApp.Models.ServiceOrder", "ServiceOrder")
+                    b.HasOne("WarsztatSamochodowyApp.Models.ServiceOrder", null)
                         .WithMany("Comments")
                         .HasForeignKey("ServiceOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("ServiceOrder");
                 });
 
             modelBuilder.Entity("WarsztatSamochodowyApp.Models.Part", b =>
