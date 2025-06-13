@@ -72,12 +72,9 @@
                         <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index"><i
                                 class="bi bi-house-door-fill me-1"></i>Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="" asp-controller="Client" asp-action="Index"><i
-                                class="bi bi-people-fill me-1"></i>Klienci</a>
-                    </li>
 
-                    @* Twoje komponenty zostają, ale będą dziedziczyć nowy styl *@
+
+                    @await Component.InvokeAsync("Header", new { policyName = "ClientsPolicy", viewName = "ClientsButton" })
                     @await Component.InvokeAsync("Header", new { policyName = "CarPartsPolicy", viewName = "PartsButtons" })
                     @await Component.InvokeAsync("Header", new { policyName = "CarRegistrationPolicy", viewName = "VehiclesButton" })
                     @await Component.InvokeAsync("Header", new { policyName = "ServiceOrderPolicy", viewName = "ServiceOrderButton" })
@@ -85,11 +82,11 @@
                     @await Component.InvokeAsync("Header", new { policyName = "ServiceTaskPolicy", viewName = "ReportsButton" })
                 </ul>
 
-                @* Prawa strona nawigacji *@
+
                 <ul class="navbar-nav ms-auto">
                     @await Component.InvokeAsync("Header", new { policyName = "AdminOnly", viewName = "AdminPanelButton" })
 
-                    @* Zmieniamy wygląd przycisków logowania *@
+
                     <partial name="_LoginPartial"/>
                 </ul>
 

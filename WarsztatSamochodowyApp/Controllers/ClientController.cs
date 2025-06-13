@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarsztatSamochodowyApp.Data;
@@ -5,6 +6,7 @@ using WarsztatSamochodowyApp.DTO;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
+[Authorize(Policy = "ClientsPolicy")]
 public class ClientController : Controller
 {
     private readonly ApplicationDbContext _context;

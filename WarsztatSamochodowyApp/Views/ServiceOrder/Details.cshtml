@@ -62,7 +62,7 @@
     <div class="mb-4">
         @foreach (var comment in Model.Comments)
         {
-            <div class="border rounded p-2 mb-2 bg-light">
+            <div class="border rounded p-2 mb-2 bg-dark">
                 <strong>@comment.Author</strong>
                 <span class="text-muted" style="font-size: 0.85em;">@comment.CreatedAt.ToString("g")</span>
                 <div>@comment.Content</div>

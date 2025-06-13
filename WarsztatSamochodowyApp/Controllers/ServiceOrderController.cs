@@ -10,6 +10,7 @@ using WarsztatSamochodowyApp.Models;
 
 namespace WarsztatSamochodowyApp.Controllers;
 
+[Authorize(Policy = "ServiceOrderPolicy")]
 public class ServiceOrderController : Controller
 {
     private readonly ApplicationDbContext _context;

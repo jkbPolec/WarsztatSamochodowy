@@ -15,5 +15,7 @@ public static class AuthorizationPolicies
         options.AddPolicy("ServiceTaskPolicy", policy => { policy.RequireRole("Admin", "Mechanik"); });
         options.AddPolicy("OnlyAssignedMechanic",
             policy => { policy.Requirements.Add(new AssignedMechanicRequirement()); });
+        options.AddPolicy("ClientsPolicy",
+            policy => { policy.RequireRole("Admin", "Recepcjonista"); });
     }
 }
