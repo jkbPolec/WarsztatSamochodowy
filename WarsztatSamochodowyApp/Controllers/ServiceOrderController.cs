@@ -142,7 +142,7 @@ public class ServiceOrderController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Błąd podczas tworzenia zlecenia serwisowego.");
-            ModelState.AddModelError("", "Wystąpił nieoczekiwany błąd podczas zapisu zlecenia. Spróbuj ponownie.");
+            return StatusCode(500, "Wystąpił błąd podczas zapisu zlecenia.");
         }
 
         await PrepareViewDataForCreateAndEdit(dto);
