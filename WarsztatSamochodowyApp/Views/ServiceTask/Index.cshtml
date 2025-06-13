@@ -18,13 +18,10 @@
     <tbody>
     @foreach (var task in Model)
     {
-        var partsCost = task.UsedParts?.Sum(up => up.Quantity * (up.Part?.Price ?? 0)) ?? 0;
-        var totalPrice = task.Price + partsCost;
-
         <tr>
             <td>@task.Name</td>
             <td>@task.Description</td>
-            <td>@totalPrice.ToString("C")</td>
+            <td>@task.TotalCost.ToString("C")</td>
             <td>
                 <a asp-action="Details" asp-route-id="@task.Id">Szczegóły</a> |
                 <a asp-action="Edit" asp-route-id="@task.Id">Edytuj</a> |

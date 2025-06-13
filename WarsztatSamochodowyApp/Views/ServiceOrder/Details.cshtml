@@ -31,7 +31,7 @@
             <ul>
                 @foreach (var task in Model.ServiceTasks)
                 {
-                    <li>@task.Name - @task.TotalCost.ToString("C")</li>
+                    <li>@task.Name - @task.Price.ToString("C")</li>
                 }
             </ul>
         }
